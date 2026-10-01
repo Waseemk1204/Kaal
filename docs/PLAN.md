@@ -231,3 +231,22 @@ sighting. Never cut: the reveal shader, Kaal's freeze-in-light, the death.
 - **Both endings are deaths**, as written in STORY §7.
 - **English only.** All dialogue is English subtitles; no recorded voice.
 - **Deploy** to Vercel as its own project.
+
+## 7. Status (2026-10-01)
+
+| Milestone | State |
+|---|---|
+| M0 Skeleton | Done |
+| M1 Two times | Done: reveal shader with burning edge, the 1987 floor over the tank, falling, the ladder |
+| M2 Kaal | Done: rig, wrong gait, pauses, folding, held in light, head tracking, reach, ticking, wall marks, presence |
+| M3 The game | Done: props in both times, faceless family, items and decay, candles, all three acts, the diya, checkpoints, diary pages |
+| M4 The death | Done: the full sequence, with the aging-skin shader and the grey morning |
+| M5 Prologue and endings | Done: the dinner, the flickers, the first match; both endings with their photograph cards |
+| M6 Art and sound | First pass done; more to do (see below) |
+| M7 Polish and ship | Title, brightness check, settings, pause, controls hint done. Deploy is waiting on a Vercel login |
+
+Still to do:
+- **Blind playtests (3+ people), then tuning** every number in `shared/rules.js`: match counts, burn times, Kaal speeds, freshness.
+- **Art pass on the family**: they read clearly but look like mannequins. Better hands, clothes folds, hair.
+- **Kaal's doorway fold**: worth a dedicated look in motion; it's only been checked in stills.
+- **Sound**: a low music drone for stage 3, and more variety in the house's creaks.
