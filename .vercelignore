@@ -2,3 +2,4 @@
 test/
 server.mjs
 docs/
+.claude/
