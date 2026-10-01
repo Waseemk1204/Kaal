@@ -25,7 +25,9 @@ plain ES modules, a vendored Three.js, and sound synthesised in WebAudio.
 | WASD / mouse | walk, look |
 | F or right click | strike a match |
 | E | use, pick up (hold for longer tasks) |
-| Q | set down a lit candle |
+| Q | set down a lit candle (strikes a match if you need one) |
+| G | drop a burning match; it keeps burning on the floor |
+| Tab or R | shake the matchbox to count what's left |
 | Shift | run (it blows out a match) |
 | Esc | pause |
 

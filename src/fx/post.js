@@ -21,7 +21,7 @@ export class Post {
       blood: 0,
       exposure: 1,
       warp: 0,
-      bloom: 0.9,
+      bloom: 0.55,
       grade: 1,
     };
     // Bloom: a bright pass, then a wide blur, at quarter size.
@@ -30,7 +30,7 @@ export class Post {
     this.bloomB = new THREE.WebGLRenderTarget(1, 1, half);
     const quadVS = /* glsl */ `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
     this.brightMat = new THREE.ShaderMaterial({
-      uniforms: { tScene: { value: this.target.texture }, uThreshold: { value: 0.9 } },
+      uniforms: { tScene: { value: this.target.texture }, uThreshold: { value: 1.6 } },
       vertexShader: quadVS,
       fragmentShader: /* glsl */ `
         uniform sampler2D tScene; uniform float uThreshold; varying vec2 vUv;
@@ -64,7 +64,7 @@ export class Post {
       uniforms: {
         tScene: { value: this.target.texture },
         tBloom: { value: this.bloomA.texture },
-        uBloom: { value: 0.9 },
+        uBloom: { value: 0.55 },
         uGrade: { value: 1 },
         uTime: { value: 0 },
         uGrain: { value: 0 },

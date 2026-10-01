@@ -251,3 +251,17 @@ Still to do:
 - ~~Kaal's doorway fold~~: checked in motion.
 - ~~Sound~~: dread drone by stage and nearness; house settling, gusts. Dust near Kaal.
 - ~~Continue~~: checkpoints saved in the browser.
+
+### Graphics and mechanics pass (2026-10-01)
+
+- Graphics: bloom on flames and the burning edge; teal/amber colour grade;
+  normal maps derived from every surface texture and blended between the two
+  times; moonlight shafts with dust through the roof holes and the dining
+  jaali (they burn away where 1987 is lit); cobwebs (only now); soft shading
+  where walls meet floor and ceiling.
+- Mechanics: drop a burning match (G) to leave a holding light behind you;
+  shake the box (Tab/R) to count; Q strikes a match for a candle if you need
+  one; Kaal has a body you can't walk through; you can't use things through
+  walls, and Kaal can't reach through them (tested); looking at a 1987 thing
+  in the dark tells you something's there; 1987 things crackle and warn as
+  they age; a memory nudges you toward the next step after 75 s idle.

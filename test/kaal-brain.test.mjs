@@ -77,6 +77,14 @@ test("in the dark and close, it reaches, then catches", () => {
   assert.equal(b.s.mode, "caught");
 });
 
+test("it can't reach you through a wall", () => {
+  const b = new KaalBrain({ random: seeded() });
+  b.setStage(STAGE.FOLLOWING);
+  b.place(2.6, -1.5, { force: true, mode: "walk" }); // dining side of the kitchen wall
+  const ev = run(b, dark({ x: 3.4, z: -1.5, y: 0 }), 0.2); // kitchen side, 0.8 m away
+  assert.ok(!ev.includes("reach"));
+});
+
 test("a match struck mid-reach holds it, arms half up", () => {
   const b = new KaalBrain({ random: seeded() });
   b.setStage(STAGE.FOLLOWING);

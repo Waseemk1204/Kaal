@@ -173,7 +173,8 @@ export class KaalBrain {
 
     // The reach: in the dark and close, its arms come up.
     if (this.following && !this.target && (s.mode === "walk" || s.mode === "pause" || s.mode === "reach" || s.mode === "still")) {
-      const close = dist < KAAL.reach && Math.abs((player.y ?? 0) - s.y) < 1.6;
+      // Close, at the same level, and not through a wall.
+      const close = dist < KAAL.reach && Math.abs((player.y ?? 0) - s.y) < 1.6 && lineOfSight(s, player);
       if (close && s.mode !== "reach") {
         s.mode = "reach";
         ev.push("reach");

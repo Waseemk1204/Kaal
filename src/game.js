@@ -14,6 +14,7 @@ import { Player } from "./player.js";
 import { Post } from "./fx/post.js";
 import { MATCH, CANDLE, PLAYER, SUPPLY, STAGE, HOLD } from "../shared/rules.js";
 import { lightAmount, burnRate } from "../shared/light.js";
+import { lineOfSight } from "../shared/house-map.js";
 
 export class Game {
   constructor({ renderer, canvas, audio, sounds, input, look, ui }) {
@@ -157,11 +158,18 @@ export class Game {
       this.ui.note("No candles.", 1.5);
       return;
     }
-    if (!this.matchLit) {
-      this.ui.note("You need a flame to light it.", 1.8);
-      return;
-    }
     if (this.player.inTank) return;
+    if (!this.matchLit) {
+      // No flame in hand: strike one for it (it never fails against the wick).
+      const tab = this.inv.tab > 0 && this.inv.tabFresh > 0;
+      if (!tab && this.inv.ab <= 0) {
+        this.ui.note("No matches to light it with.", 1.8);
+        return;
+      }
+      if (tab) this.inv.tab -= 1;
+      else this.inv.ab -= 1;
+      this.sounds.strike(true);
+    }
     const p = this.player;
     const x = p.x - Math.sin(p.yaw) * 0.55;
     const z = p.z - Math.cos(p.yaw) * 0.55;
@@ -184,6 +192,41 @@ export class Game {
     this.sounds.e.burst({ duration: 0.3, gain: 0.12, freq: 600, q: 0.6, type: "lowpass" });
     this.ui.showMatches(this.inv.ab, this.inv.tab, this.inv.candles);
     this.director?.event("candle", flame);
+  }
+
+  // Let a burning match fall: it keeps burning on the floor for a while,
+  // a little island of 1987 behind you.
+  dropLit() {
+    if (!this.matchLit || this.player.inTank) return;
+    const left = this.match.left;
+    const p = this.player;
+    const x = p.x - Math.sin(p.yaw) * 0.25;
+    const z = p.z - Math.cos(p.yaw) * 0.25;
+    this.dropMatch("dropped");
+    const holder = new THREE.Group();
+    holder.position.set(x, this.world?.surfaceAt?.(x, z) ?? 0, z);
+    holder.rotation.y = Math.random() * Math.PI;
+    this.scene.add(holder);
+    const stick = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.004), new THREE.MeshStandardMaterial({ color: 0x2a1a12 }));
+    stick.position.y = 0.003;
+    holder.add(stick);
+    const tip = new THREE.Object3D();
+    tip.position.set(0.026, 0.004, 0);
+    holder.add(tip);
+    const flame = new Flame({ kind: "match", radius: MATCH.radius * 0.75, burn: Math.max(1.5, left * 0.9), pool: this.pool, parent: tip });
+    flame.holder = holder;
+    flame.dropped = true;
+    this.placed.push(flame);
+    this.sounds.e.burst({ duration: 0.05, gain: 0.06, freq: 2500, q: 2, delay: 0.25 });
+  }
+
+  // Shake the box: count what's left by the rattle.
+  shakeBox() {
+    const n = this.inv.ab + (this.inv.tabFresh > 0 ? this.inv.tab : 0);
+    this.ui.showMatches(this.inv.ab, this.inv.tabFresh > 0 ? this.inv.tab : 0, this.inv.candles, 2.6);
+    const e = this.sounds.e;
+    for (let i = 0; i < Math.min(8, n); i += 1) e.burst({ duration: 0.03, gain: 0.05, freq: 3200 + Math.random() * 1500, q: 3, delay: i * 0.035 + Math.random() * 0.02 });
+    if (!n) e.burst({ duration: 0.08, gain: 0.05, freq: 900, q: 1 });
   }
 
   updateFlames(dt) {
@@ -213,8 +256,10 @@ export class Game {
     for (const c of this.placed) {
       if (!c.lit) continue;
       c.update(dt, rate(c));
-      c.stub.scale.y = Math.max(0.15, c.fuel);
-      c.object.parent.position.y = 0.095 * Math.max(0.15, c.fuel);
+      if (c.stub) {
+        c.stub.scale.y = Math.max(0.15, c.fuel);
+        c.object.parent.position.y = 0.095 * Math.max(0.15, c.fuel);
+      }
       if (!c.lit) {
         this.sounds.snuff();
         this.director?.event("candleOut", c);
@@ -239,6 +284,8 @@ export class Game {
     if (playing) {
       if (input.strike) this.tryStrike();
       if (input.hit("q")) this.placeCandle();
+      if (input.hit("g")) this.dropLit();
+      if (input.hit("tab", "r")) this.shakeBox();
       const running = input.running && !this.player.inTank;
       if (running && this.matchLit) {
         this.ui.note("Running, the match goes out.", 1.5);
@@ -246,6 +293,18 @@ export class Game {
       }
       const mode = running ? "run" : this.matchLit || this.strikeT >= 0 ? "match" : "walk";
       this.player.update(dt, input.move(), mode, this.warmLights(), { climbHeld: input.interacting });
+      // Kaal has a body: you can't walk through it (you can squeeze past).
+      const k = this.kaal?.state;
+      if (k?.present && Math.abs(k.y - this.player.y) < 1.5) {
+        const dx = this.player.x - k.x;
+        const dz = this.player.z - k.z;
+        const d = Math.hypot(dx, dz);
+        const r = 0.24 + 0.2;
+        if (d < r && d > 1e-4) {
+          this.player.x = k.x + (dx / d) * r;
+          this.player.z = k.z + (dz / d) * r;
+        }
+      }
     }
     this.updateStrike(dt);
     this.updateFlames(dt);
@@ -254,6 +313,7 @@ export class Game {
     this.director?.update?.(dt);
     if (playing) this.updateInteraction(dt);
     else if (!this.director?.scene?.ownsPrompt) {
+      document.querySelector("#controls")?.classList.remove("on");
       this.ui.setPrompt("");
       this.ui.setHold(0);
     }
@@ -321,12 +381,15 @@ export class Game {
       // Wider when close: things at arm's length are easy to reach for.
       const need = (it.wide ?? 0.9) - 0.12 * Math.max(0, 1 - d / 1.2);
       if (dot < need) continue;
-      if (it.tabOnly && lightAmount(lights, it.pos) < 0.5) continue;
+      if (!it.throughWalls && !lineOfSight(cam.position, it.pos)) continue; // not through walls
+      // Something from 1987 in the dark: you can tell something was there.
+      const unseen = it.tabOnly && lightAmount(lights, it.pos) < 0.5;
+      if (unseen && !it.hintInDark) continue;
       if (it.abOnly && lightAmount(lights, it.pos) > 0.5) continue;
-      const score = dot * 2 - d * 0.3;
+      const score = dot * 2 - d * 0.3 - (unseen ? 0.5 : 0);
       if (score > bestScore) {
+        best = unseen ? { dark: true, it } : it;
         bestScore = score;
-        best = it;
       }
     }
     if (best !== this.focus) {
@@ -336,6 +399,12 @@ export class Game {
     if (!best) {
       this.ui.setPrompt("");
       this.ui.setHold(0);
+      return;
+    }
+    if (best.dark) {
+      this.ui.setPrompt("Something was here. Strike a match to see it.", "F");
+      this.ui.setHold(0);
+      this.focus = null;
       return;
     }
     const label = typeof best.label === "function" ? best.label() : best.label;

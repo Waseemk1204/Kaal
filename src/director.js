@@ -112,6 +112,7 @@ export class Director {
         label: d.label,
         wide: d.wide ?? 0.9,
         tabOnly: d.era === "tab",
+        hintInDark: d.era === "tab",
         abOnly: d.era === "ab",
         can: () => !p.picked && !this.scene && (!d.when || d.when()) && g.state === "play",
         use: () => {
@@ -212,7 +213,28 @@ export class Director {
     return this.g.inv.items.has(id);
   }
 
+  // Something happened: the player isn't stuck.
+  progress() {
+    this.idle = 0;
+  }
+
+  // What to nudge toward, if you've been wandering a long time.
+  hint() {
+    const g = this.g;
+    const r = this.restored;
+    if (this.has("bangles")) return "Her bangles belong at her place at the table. Before the glass goes.";
+    if (this.has("spectacles")) return "Dadi's place at the table. Before the lenses cloud.";
+    if (this.has("watch")) return "Papa's place. He'd want it wound.";
+    if (!r.mummy) return "Mummy took her bangles off to knead the dough. The far shelf in the kitchen, past where the floor was.";
+    if (!r.dadi) return "Dadi kept her spectacles folded in her Gita, on the pooja shelf. In her room. Where it waits.";
+    if (!r.papa) return "Papa took his watch off for dinner. Always on top of the TV. You'd need light to see it there.";
+    if (!this.has("thali") && !this.diyaState.oil) return "The diya needs oil and a wick. Dadi's pooja thali had both.";
+    void g;
+    return "Light the diya. Oil, a wick, a flame.";
+  }
+
   supply(matches, candles, text) {
+    this.progress();
     const g = this.g;
     g.inv.ab += matches;
     g.inv.candles += candles;
@@ -221,6 +243,7 @@ export class Director {
   }
 
   take(id, fresh) {
+    this.progress();
     const g = this.g;
     g.inv.items.set(id, { fresh, total: fresh });
     this.hold(id);
@@ -267,6 +290,7 @@ export class Director {
   }
 
   read(n) {
+    this.progress();
     this.g.ui.page(PAGES[n]);
     this.flags[`page${n}`] = true;
   }
@@ -367,6 +391,7 @@ export class Director {
 
   // ----------------------------------------------------------- the family
   restore(id, item, { quiet = false } = {}) {
+    this.progress();
     const g = this.g;
     if (item) this.drop(item);
     this.restored[id] = true;
@@ -566,6 +591,13 @@ export class Director {
     const p = g.player;
     const room = roomAt(p.x, p.z);
 
+    // A memory, if you've been wandering a long while.
+    this.idle = (this.idle ?? 0) + dt;
+    if (this.idle > 75 && !g.ui.reading) {
+      this.idle = 0;
+      this.memory(this.hint(), 6);
+    }
+
     // Kaal goes where the story wants it, but only unseen and far away.
     if (this.pendingKaal) {
       const k = this.pendingKaal;
@@ -613,7 +645,14 @@ export class Director {
     for (const [id, it] of g.inv.items) {
       if (it.fresh == null) continue;
       it.fresh -= dt * rate;
-      if (this.held === id && this.heldModel) setAge(this.heldModel, 1 - Math.max(0, it.fresh) / it.total);
+      const age = 1 - Math.max(0, it.fresh) / it.total;
+      if (this.held === id && this.heldModel) setAge(this.heldModel, age);
+      // You hear it going: a dry crackle, more often as it ages.
+      if (rate > 0 && age > 0.4 && Math.random() < dt * age * 3) g.sounds.e.burst({ duration: 0.03, gain: 0.04 + age * 0.06, freq: 4000 + Math.random() * 3000, q: 4 });
+      if (rate > 0 && age > 0.7 && !it.warned) {
+        it.warned = true;
+        g.ui.note(id === "bangles" ? "The glass is crazing." : "It won't last much longer in the dark.", 2);
+      }
       if (it.fresh <= 0) this.crumble(id);
     }
     if (g.inv.tab > 0) {
