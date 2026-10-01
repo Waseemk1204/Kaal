@@ -7,7 +7,6 @@
 // Every limb hangs along -y from its joint.
 
 import * as THREE from "three";
-import { KAAL } from "../../shared/rules.js";
 
 // Black that doesn't take light or fog: a hole in the picture.
 export const VOID = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false });
@@ -81,32 +80,50 @@ function child(parent, seg) {
   return seg;
 }
 
+// An ellipsoid of void (with its smoke) on a joint: ribs, pelvis, muscles
+// that have wasted down to cords.
+function blob(parent, rx, ry, rz, x = 0, y = 0, z = 0, { rot = [0, 0, 0], fringe = true } = {}) {
+  const geo = new THREE.SphereGeometry(1, 14, 10);
+  const m = new THREE.Mesh(geo, VOID);
+  m.scale.set(rx, ry, rz);
+  m.position.set(x, y, z);
+  m.rotation.set(...rot);
+  m.castShadow = true;
+  parent.add(m);
+  if (fringe) {
+    const sh = new THREE.Mesh(geo, FRINGE);
+    sh.scale.set(rx * 1.18, ry * 1.08, rz * 1.18);
+    sh.position.copy(m.position);
+    sh.rotation.copy(m.rotation);
+    parent.add(sh);
+  }
+  return m;
+}
+
 export function buildKaal() {
   const root = new THREE.Group();
   root.name = "kaal";
-  const H = KAAL.height;
-  const hipY = H * 0.52; // ~1.45 m
+  const hipY = 1.42;
 
   const hips = new THREE.Group();
   hips.position.y = hipY;
   root.add(hips);
-  const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), VOID);
-  pelvis.scale.set(1.3, 0.8, 0.8);
-  hips.add(pelvis);
+  // A bony pelvis, wider than the waist above it.
+  blob(hips, 0.15, 0.08, 0.085, 0, 0.0, 0);
+  for (const side of [-1, 1]) blob(hips, 0.04, 0.06, 0.035, side * 0.13, 0.04, -0.02, { rot: [0, 0, side * 0.5], fringe: false });
 
-  // Spine: three segments going up (built hanging, then flipped).
+  // Spine: the first segment flips to point up; the rest follow it. In this
+  // flipped frame -y is up and +z is its front.
   const spine = [];
-  let parent = hips;
-  const spineLens = [0.3, 0.3, 0.32];
+  const spineLens = [0.26, 0.24, 0.36];
   const spineR = [
-    [0.075, 0.07],
-    [0.07, 0.085],
-    [0.085, 0.1],
+    [0.05, 0.042], // waist: pinched thin
+    [0.045, 0.07],
+    [0.07, 0.11], // chest
   ];
+  let parent = hips;
   for (let i = 0; i < 3; i += 1) {
-    const s = segment(spineLens[i], spineR[i][1], spineR[i][0]);
-    // The first segment flips to point up; the rest follow it. In this
-    // flipped frame -y is up and +z is its front.
+    const s = segment(spineLens[i], spineR[i][0], spineR[i][1]);
     if (i === 0) s.rotation.x = Math.PI;
     else s.position.y = -spineLens[i - 1];
     parent.add(s);
@@ -114,112 +131,115 @@ export function buildKaal() {
     parent = s;
   }
   const chest = spine[2];
-  // A narrow ribcage, ribs pressing through the silhouette.
-  const ribs = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), VOID);
-  ribs.scale.set(1.05, 1.35, 0.6);
-  ribs.position.y = -0.18;
-  ribs.castShadow = true;
-  chest.add(ribs);
-  for (let i = 0; i < 5; i += 1) {
-    const rib = new THREE.Mesh(new THREE.TorusGeometry(0.135 - i * 0.008, 0.008, 4, 18, Math.PI * 1.1), VOID);
-    rib.rotation.set(Math.PI / 2, 0, -Math.PI * 0.05);
-    rib.position.set(0, -0.06 - i * 0.055, 0.0);
-    rib.scale.set(1.1, 0.62, 1);
-    chest.add(rib);
-  }
-  // Shoulder blades and spine knobs on the back (+z is its back).
+  // The ribcage: deep at the top, cut away under the ribs.
+  blob(chest, 0.17, 0.23, 0.13, 0, -0.2, 0.02);
+  blob(chest, 0.12, 0.08, 0.1, 0, -0.04, 0.03, { fringe: false }); // the hollow under the ribs
+  // Shoulders hunched up toward where ears would be: trapezius slopes and
+  // clavicles like coat-hanger wire.
   for (const side of [-1, 1]) {
-    const blade = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), VOID);
-    blade.scale.set(1, 1.4, 0.35);
-    blade.position.set(side * 0.07, -0.12, -0.085);
-    blade.rotation.z = side * 0.3;
-    chest.add(blade);
+    blob(chest, 0.12, 0.045, 0.06, side * 0.11, -0.37, -0.01, { rot: [0, 0, side * -0.45] });
+    const clav = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), VOID);
+    clav.rotation.z = Math.PI / 2 + side * 0.25;
+    clav.position.set(side * 0.11, -0.34, 0.06);
+    chest.add(clav);
+    // Shoulder blades pushing out of the back.
+    blob(chest, 0.075, 0.11, 0.03, side * 0.09, -0.22, -0.1, { rot: [0.2, 0, side * 0.35], fringe: false });
   }
   for (const s of spine) {
     for (let k = 0; k < 3; k += 1) {
-      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 5), VOID);
-      knob.position.set(0, -s.userData.len * (k / 3 + 0.15), -0.07);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 5), VOID);
+      knob.position.set(0, -s.userData.len * (k / 3 + 0.15), -0.06);
       s.add(knob);
     }
   }
 
-  // Neck and the head: a smooth egg, slightly too small, tipped forward.
-  const neck = segment(0.3, 0.032, 0.038, { radial: 8 });
+  // Neck, slightly too long, and the head: a long smooth egg, nothing on it.
+  const neck = segment(0.32, 0.03, 0.04, { radial: 8 });
   neck.position.y = -chest.userData.len;
   chest.add(neck);
   const headPivot = new THREE.Group();
   headPivot.position.y = -neck.userData.len;
   neck.add(headPivot);
-  const headGeo = new THREE.SphereGeometry(0.1, 20, 16);
-  // Egg: narrower at the chin, longer at the back of the skull.
+  const headGeo = new THREE.SphereGeometry(0.1, 24, 18);
   const pos = headGeo.attributes.position;
   for (let i = 0; i < pos.count; i += 1) {
     const x = pos.getX(i);
-    let y = pos.getY(i);
-    let z = pos.getZ(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
     const t = (y + 0.1) / 0.2; // 0 chin … 1 crown
-    const narrow = 0.72 + 0.28 * Math.sin(t * Math.PI * 0.85);
-    y = y * 1.45;
-    z = z * 1.1 + (t - 0.5) * 0.03;
-    pos.setXYZ(i, x * narrow, y, z * narrow);
+    // Narrow at the chin, swelling toward the back of the crown.
+    const w = 0.55 + 0.45 * Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.62);
+    pos.setXYZ(i, x * w * 0.78, y * 1.65, z * w * 0.95 - t * 0.035);
   }
   headGeo.computeVertexNormals();
   headGeo.rotateX(Math.PI); // chin toward local +y, which is down here
-  headGeo.translate(0, -0.13, 0); // pivot at the base of the skull
+  headGeo.translate(0, -0.15, 0); // pivot at the base of the skull
   const head = new THREE.Mesh(headGeo, VOID);
   head.castShadow = true;
   headPivot.add(head);
   const headShell = new THREE.Mesh(headGeo, FRINGE);
-  headShell.scale.setScalar(1.18);
+  headShell.scale.setScalar(1.14);
   headPivot.add(headShell);
 
-  // Arms: far too long. Fingers: four segments each (one too many).
+  // Arms: longer than a man is tall. Elbows like knots in rope. Hands as big
+  // as plates, fingers with one joint too many.
   const arms = [];
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Group();
-    shoulder.position.set(side * 0.17, -chest.userData.len + 0.05, 0.01);
+    shoulder.position.set(side * 0.22, -chest.userData.len + 0.02, 0.0);
     chest.add(shoulder);
-    // The chest segment is flipped (pointing up), so undo that for arms.
+    blob(shoulder, 0.05, 0.05, 0.05, 0, 0, 0);
     const armRoot = new THREE.Group();
     armRoot.rotation.x = Math.PI; // back to hanging, +z behind
     shoulder.add(armRoot);
-    const upper = segment(0.64, 0.04, 0.03);
+    const upper = segment(0.66, 0.042, 0.026);
     armRoot.add(upper);
-    const fore = child(upper, segment(0.66, 0.032, 0.022));
-    const hand = child(fore, segment(0.12, 0.024, 0.03, { radial: 8 }));
-    hand.children[0].scale.set(1, 1, 0.45);
+    blob(upper, 0.032, 0.11, 0.03, 0, -0.22, 0, { fringe: false }); // wasted biceps
+    const fore = child(upper, segment(0.68, 0.034, 0.02));
+    blob(fore, 0.04, 0.035, 0.045, 0, 0.0, 0.015, { fringe: false }); // the elbow knot
+    blob(fore, 0.026, 0.12, 0.024, 0, -0.18, 0, { fringe: false });
+    const hand = child(fore, segment(0.13, 0.024, 0.04, { radial: 8 }));
+    hand.children[0].scale.set(1.25, 1, 0.38);
     const fingers = [];
     for (let f = 0; f < 5; f += 1) {
       const thumb = f === 4;
       const base = new THREE.Group();
-      base.position.set(thumb ? side * -0.03 : (f - 1.5) * 0.014 * -side, -0.11, thumb ? 0.01 : 0);
-      if (thumb) base.position.y = -0.05;
+      base.position.set(thumb ? side * -0.04 : (f - 1.5) * 0.02 * -side, thumb ? -0.04 : -0.125, thumb ? 0.012 : 0);
+      if (thumb) base.rotation.z = side * 0.5;
       hand.add(base);
       let p = base;
       const segs = [];
       const n = thumb ? 3 : 4;
-      const L = thumb ? 0.045 : 0.06 + (f === 1 || f === 2 ? 0.012 : 0);
+      const L = thumb ? 0.06 : 0.075 + (f === 1 || f === 2 ? 0.015 : 0);
       for (let k = 0; k < n; k += 1) {
-        const seg = segment(L * (1 - k * 0.1), 0.0085 - k * 0.0012, 0.007 - k * 0.0012, { radial: 6 });
+        const seg = segment(L * (1 - k * 0.08), 0.0105 - k * 0.0012, 0.0085 - k * 0.0014, { radial: 6 });
         if (k > 0) seg.position.y = -p.userData.len;
         p.add(seg);
         segs.push(seg);
         p = seg;
       }
+      // A nail like a thorn.
+      const nail = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.03, 5), VOID);
+      nail.rotation.x = Math.PI;
+      nail.position.y = -p.userData.len - 0.012;
+      p.add(nail);
       fingers.push(segs);
     }
     arms.push({ side, shoulder, armRoot, upper, fore, hand, fingers });
   }
 
-  // Legs.
+  // Legs: knees that stand out like knuckles, shins like table legs.
   const legs = [];
   for (const side of [-1, 1]) {
-    const thigh = segment(0.74, 0.055, 0.035);
-    thigh.position.set(side * 0.09, 0, 0);
+    const thigh = segment(0.72, 0.06, 0.034);
+    thigh.position.set(side * 0.1, -0.02, 0);
     hips.add(thigh);
-    const shin = child(thigh, segment(0.72, 0.038, 0.022));
-    const foot = child(shin, segment(0.26, 0.022, 0.012, { radial: 6 }));
-    foot.rotation.x = Math.PI / 2 - 0.15; // long, pointed, forward
+    blob(thigh, 0.04, 0.16, 0.042, 0, -0.26, 0.0, { fringe: false });
+    const shin = child(thigh, segment(0.7, 0.036, 0.02));
+    blob(shin, 0.045, 0.045, 0.05, 0, 0, -0.012, { fringe: false }); // the knee
+    blob(shin, 0.026, 0.14, 0.03, 0, -0.2, 0.01, { fringe: false });
+    const foot = child(shin, segment(0.28, 0.024, 0.01, { radial: 6 }));
+    foot.rotation.x = Math.PI / 2 - 0.15;
     legs.push({ side, thigh, shin, foot });
   }
 

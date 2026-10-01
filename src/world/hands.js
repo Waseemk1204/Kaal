@@ -200,7 +200,7 @@ export class Hands {
     const lu = easeOut(this.leftUp);
     let flick = 0;
     if (this.strikeT >= 0 && this.strikeT < 0.35) flick = Math.sin((this.strikeT / 0.35) * Math.PI);
-    this.left.position.set(-0.13 + flick * 0.05 + sx, -0.36 + lu * 0.17 + sy, -0.34);
+    this.left.position.set(-0.2 + flick * 0.05 + sx, -0.4 + lu * 0.17 + sy, -0.36);
     this.left.rotation.set(0, 0, flick * -0.35);
     const ru = easeOut(this.rightUp);
     this.right.position.set(0.16 - sx, -0.38 + ru * 0.17 + sy, -0.36);

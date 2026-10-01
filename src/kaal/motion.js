@@ -111,25 +111,25 @@ export class KaalView {
     // --- legs: knee first, then hip
     for (const leg of r.legs) {
       const off = leg.side < 0 ? 0 : Math.PI;
-      const hip = 0.38 * sticky(phase + off - 0.45) * walk + 0.95 * fold;
+      const hip = 0.1 + 0.38 * sticky(phase + off - 0.45) * walk + 0.95 * fold;
       const kneeLift = Math.max(0, Math.sin(phase + off + 0.6)) * 1.05 * walk;
       leg.thigh.rotation.x = this.p(`th${leg.side}`, hip, 9, dt);
       leg.thigh.rotation.z = leg.side * 0.04;
-      leg.shin.rotation.x = this.p(`sh${leg.side}`, -(Math.pow(kneeLift, 0.6) * 0.9) - 1.45 * fold - 0.08, 9, dt);
+      leg.shin.rotation.x = this.p(`sh${leg.side}`, -(Math.pow(kneeLift, 0.6) * 0.9) - 1.45 * fold - 0.2, 9, dt);
       leg.foot.rotation.x = Math.PI / 2 - 0.15 + kneeLift * 0.4 + fold * 0.5;
     }
     r.hips.position.y = r.hipY - 0.035 * Math.abs(Math.sin(phase)) * walk - 0.62 * fold;
 
     // --- spine: always stooped, curling down at doorways
     const breathe = Math.sin(t * 0.7) * 0.01;
-    r.spine[0].rotation.x = Math.PI - this.p("sp0", 0.16 + 0.55 * fold + reach * 0.15 + (dormant ? 0.15 : 0), 4, dt);
+    r.spine[0].rotation.x = Math.PI - this.p("sp0", 0.08 + 0.55 * fold + reach * 0.15 + (dormant ? 0.15 : 0), 4, dt);
     r.spine[0].rotation.z = 0.05 * sticky(phase - 1.1) * walk;
-    r.spine[1].rotation.x = -this.p("sp1", 0.12 + 0.45 * fold + breathe, 4, dt);
-    r.spine[2].rotation.x = -this.p("sp2", 0.1 + 0.35 * fold - reach * 0.2 + breathe, 4, dt);
-    r.neck.rotation.x = -this.p("neck", 0.5 + 0.2 * fold - reach * 0.45 + (dormant ? 0.35 : 0), 3, dt);
+    r.spine[1].rotation.x = -this.p("sp1", 0.3 + 0.45 * fold + breathe, 4, dt);
+    r.spine[2].rotation.x = -this.p("sp2", 0.38 + 0.35 * fold - reach * 0.2 + breathe, 4, dt);
+    r.neck.rotation.x = -this.p("neck", 0.12 + 0.2 * fold - reach * 0.45 + (dormant ? 0.35 : 0), 3, dt);
     // Head tipped forward, as if listening; it tilts when it stops.
     const tilt = (1 - walk) * Math.sin(t * 0.21) * 0.35;
-    r.headPivot.rotation.x = -this.p("headX", 0.32 - reach * 0.5 + (dormant ? 0.45 : 0), 3, dt);
+    r.headPivot.rotation.x = -this.p("headX", 0.3 - reach * 0.5 + (dormant ? 0.45 : 0), 3, dt);
     r.headPivot.rotation.z = this.p("tilt", tilt + (dormant ? 0.2 : 0), 1.5, dt);
 
     // --- arms: dangling, dragging the wall, or rising to take you
@@ -140,8 +140,8 @@ export class KaalView {
       arm.shoulder.position.x = side * 0.17 * (1 - 0.3 * fold);
       const swing = 0.14 * sticky(phase + (side < 0 ? Math.PI : 0) - 1.2) * walk;
       let forward = 0.08 + swing + 0.35 * fold;
-      let out = 0.06;
-      let elbow = 0.12 + 0.1 * walk;
+      let out = 0.1;
+      let elbow = 0.28 + 0.1 * walk;
       this.touching[i] = false;
       const wd = walls[i];
       if (wd < 1.2 && reach < 0.1 && !dormant) {
