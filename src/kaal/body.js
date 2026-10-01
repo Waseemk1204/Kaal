@@ -100,6 +100,50 @@ function blob(parent, rx, ry, rz, x = 0, y = 0, z = 0, { rot = [0, 0, 0], fringe
   return m;
 }
 
+// One arm: longer than a man is tall. Elbows like knots in rope. A hand as
+// big as a plate, fingers with one joint too many, nails like thorns.
+// Returned unattached; the shoulder group is its root.
+export function buildArm(side) {
+  const shoulder = new THREE.Group();
+  blob(shoulder, 0.05, 0.05, 0.05, 0, 0, 0);
+  const armRoot = new THREE.Group();
+  armRoot.rotation.x = Math.PI; // back to hanging, +z behind
+  shoulder.add(armRoot);
+  const upper = segment(0.66, 0.042, 0.026);
+  armRoot.add(upper);
+  blob(upper, 0.032, 0.11, 0.03, 0, -0.22, 0, { fringe: false }); // wasted biceps
+  const fore = child(upper, segment(0.68, 0.034, 0.02));
+  blob(fore, 0.04, 0.035, 0.045, 0, 0.0, 0.015, { fringe: false }); // the elbow knot
+  blob(fore, 0.026, 0.12, 0.024, 0, -0.18, 0, { fringe: false });
+  const hand = child(fore, segment(0.13, 0.024, 0.04, { radial: 8 }));
+  hand.children[0].scale.set(1.25, 1, 0.38);
+  const fingers = [];
+  for (let f = 0; f < 5; f += 1) {
+    const thumb = f === 4;
+    const base = new THREE.Group();
+    base.position.set(thumb ? side * -0.04 : (f - 1.5) * 0.02 * -side, thumb ? -0.04 : -0.125, thumb ? 0.012 : 0);
+    if (thumb) base.rotation.z = side * 0.5;
+    hand.add(base);
+    let p = base;
+    const segs = [];
+    const n = thumb ? 3 : 4;
+    const L = thumb ? 0.06 : 0.075 + (f === 1 || f === 2 ? 0.015 : 0);
+    for (let k = 0; k < n; k += 1) {
+      const seg = segment(L * (1 - k * 0.08), 0.0105 - k * 0.0012, 0.0085 - k * 0.0014, { radial: 6 });
+      if (k > 0) seg.position.y = -p.userData.len;
+      p.add(seg);
+      segs.push(seg);
+      p = seg;
+    }
+    const nail = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.03, 5), VOID);
+    nail.rotation.x = Math.PI;
+    nail.position.y = -p.userData.len - 0.012;
+    p.add(nail);
+    fingers.push(segs);
+  }
+  return { side, shoulder, armRoot, upper, fore, hand, fingers };
+}
+
 export function buildKaal() {
   const root = new THREE.Group();
   root.name = "kaal";
@@ -136,12 +180,14 @@ export function buildKaal() {
   blob(chest, 0.12, 0.08, 0.1, 0, -0.04, 0.03, { fringe: false }); // the hollow under the ribs
   // Shoulders hunched up toward where ears would be: trapezius slopes and
   // clavicles like coat-hanger wire.
+  const shoulderDeco = [];
   for (const side of [-1, 1]) {
-    blob(chest, 0.12, 0.045, 0.06, side * 0.11, -0.37, -0.01, { rot: [0, 0, side * -0.45] });
+    shoulderDeco.push(blob(chest, 0.1, 0.03, 0.055, side * 0.12, -0.33, -0.01, { rot: [0, 0, side * -0.3], fringe: false }));
     const clav = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), VOID);
     clav.rotation.z = Math.PI / 2 + side * 0.25;
     clav.position.set(side * 0.11, -0.34, 0.06);
     chest.add(clav);
+    shoulderDeco.push(clav);
     // Shoulder blades pushing out of the back.
     blob(chest, 0.075, 0.11, 0.03, side * 0.09, -0.22, -0.1, { rot: [0.2, 0, side * 0.35], fringe: false });
   }
@@ -185,47 +231,10 @@ export function buildKaal() {
   // as plates, fingers with one joint too many.
   const arms = [];
   for (const side of [-1, 1]) {
-    const shoulder = new THREE.Group();
-    shoulder.position.set(side * 0.22, -chest.userData.len + 0.02, 0.0);
-    chest.add(shoulder);
-    blob(shoulder, 0.05, 0.05, 0.05, 0, 0, 0);
-    const armRoot = new THREE.Group();
-    armRoot.rotation.x = Math.PI; // back to hanging, +z behind
-    shoulder.add(armRoot);
-    const upper = segment(0.66, 0.042, 0.026);
-    armRoot.add(upper);
-    blob(upper, 0.032, 0.11, 0.03, 0, -0.22, 0, { fringe: false }); // wasted biceps
-    const fore = child(upper, segment(0.68, 0.034, 0.02));
-    blob(fore, 0.04, 0.035, 0.045, 0, 0.0, 0.015, { fringe: false }); // the elbow knot
-    blob(fore, 0.026, 0.12, 0.024, 0, -0.18, 0, { fringe: false });
-    const hand = child(fore, segment(0.13, 0.024, 0.04, { radial: 8 }));
-    hand.children[0].scale.set(1.25, 1, 0.38);
-    const fingers = [];
-    for (let f = 0; f < 5; f += 1) {
-      const thumb = f === 4;
-      const base = new THREE.Group();
-      base.position.set(thumb ? side * -0.04 : (f - 1.5) * 0.02 * -side, thumb ? -0.04 : -0.125, thumb ? 0.012 : 0);
-      if (thumb) base.rotation.z = side * 0.5;
-      hand.add(base);
-      let p = base;
-      const segs = [];
-      const n = thumb ? 3 : 4;
-      const L = thumb ? 0.06 : 0.075 + (f === 1 || f === 2 ? 0.015 : 0);
-      for (let k = 0; k < n; k += 1) {
-        const seg = segment(L * (1 - k * 0.08), 0.0105 - k * 0.0012, 0.0085 - k * 0.0014, { radial: 6 });
-        if (k > 0) seg.position.y = -p.userData.len;
-        p.add(seg);
-        segs.push(seg);
-        p = seg;
-      }
-      // A nail like a thorn.
-      const nail = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.03, 5), VOID);
-      nail.rotation.x = Math.PI;
-      nail.position.y = -p.userData.len - 0.012;
-      p.add(nail);
-      fingers.push(segs);
-    }
-    arms.push({ side, shoulder, armRoot, upper, fore, hand, fingers });
+    const arm = buildArm(side);
+    arm.shoulder.position.set(side * 0.22, -chest.userData.len + 0.02, 0.0);
+    chest.add(arm.shoulder);
+    arms.push(arm);
   }
 
   // Legs: knees that stand out like knuckles, shins like table legs.
@@ -243,7 +252,7 @@ export function buildKaal() {
     legs.push({ side, thigh, shin, foot });
   }
 
-  root.userData = { hips, spine, chest, neck, headPivot, head, arms, legs, hipY };
+  root.userData = { hips, spine, chest, neck, headPivot, head, arms, legs, hipY, shoulderDeco };
   return root;
 }
 

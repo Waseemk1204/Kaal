@@ -70,9 +70,9 @@ const SLEEVE = eraMaterial({ color: 0x8a8378, roughness: 1, ab: { color: 0x4a474
 // A hand: palm, four fingers and a thumb. Fingers run along +y, the palm
 // faces +z, and `curl` bends each finger toward the palm (radians per joint).
 // side: 1 = left hand, -1 = right hand (mirrors the thumb).
-export function buildHand({ side = 1, curl = [0.5, 1.1, 1.2, 1.25], thumb = 0.4 } = {}) {
+export function buildHand({ side = 1, curl = [0.5, 1.1, 1.2, 1.25], thumb = 0.4, material = null, sleeve = SLEEVE } = {}) {
   const hand = new THREE.Group();
-  const skin = skinMaterial();
+  const skin = material ?? skinMaterial();
   const palmGeo = new THREE.CapsuleGeometry(0.034, 0.035, 4, 12);
   palmGeo.scale(1.05, 1, 0.42);
   const palm = new THREE.Mesh(palmGeo, skin);
@@ -127,9 +127,9 @@ export function buildHand({ side = 1, curl = [0.5, 1.1, 1.2, 1.25], thumb = 0.4 
   arm.scale.z = 0.75;
   arm.position.set(0, -0.09, 0);
   hand.add(arm);
-  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.056, 0.32, 14, 1, true), SLEEVE);
-  sleeve.position.set(0, -0.3, 0);
-  hand.add(sleeve);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.056, 0.32, 14, 1, true), sleeve);
+  cuff.position.set(0, -0.3, 0);
+  hand.add(cuff);
   hand.traverse((c) => {
     if (c.isMesh) {
       c.castShadow = false;

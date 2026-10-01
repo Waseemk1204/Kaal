@@ -92,10 +92,10 @@ function abWall(ctx, w, h) {
   ctx.fillStyle = "#6b6e64";
   ctx.fillRect(0, 0, w, h);
   // Exposed brick where the plaster has fallen: ragged patches.
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const bx = rand() * w;
     const by = rand() * h;
-    const R = 40 + rand() * 70;
+    const R = 30 + rand() * 45;
     ctx.save();
     ctx.beginPath();
     const ph = rand() * 6;
@@ -109,7 +109,7 @@ function abWall(ctx, w, h) {
     }
     ctx.closePath();
     ctx.clip();
-    ctx.fillStyle = "#4a3028";
+    ctx.fillStyle = "#3e2e28";
     ctx.fillRect(bx - R * 2, by - R * 2, R * 4, R * 4);
     ctx.strokeStyle = "#2a1e1a";
     ctx.lineWidth = 2;

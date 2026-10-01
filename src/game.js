@@ -269,7 +269,7 @@ export class Game {
     setEraLights(lights, this.time, this.eraForce ?? 0);
     const camPos = this.camera.position;
     const inLight = lightAmount(lights, { x: camPos.x, y: camPos.y, z: camPos.z });
-    this.sounds.update(dt, { light: Math.max(inLight, this.eraForce ?? 0), duck: this.kaal?.duck ?? 1 });
+    this.sounds.update(dt, { light: Math.max(inLight, this.eraForce ?? 0), duck: this.duckOverride ?? this.kaal?.duck ?? 1 });
     const fwd = { x: -Math.sin(p.yaw), z: -Math.cos(p.yaw) };
     this.audio.listen(camPos.x, camPos.y, camPos.z, fwd.x, fwd.z);
     this.ui.update(dt);

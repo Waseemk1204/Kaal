@@ -427,6 +427,7 @@ export class Director {
     this.scene = new DeathScene(g, {
       short: this.deaths > 1,
       onDone: () => {
+        this.lastScene = this.scene;
         this.scene = null;
         g.ui.showCard("KAAL EATS EVERYONE.", "In the morning, they found the house empty.", [
           { label: "Try again", onClick: () => this.restartCheckpoint() },
@@ -457,8 +458,9 @@ export class Director {
     const c = this.checkpoint;
     g.ui.hideCard();
     g.ui.clearSubs();
-    if (this.scene?.dispose) this.scene.dispose();
+    for (const sc of [this.scene, this.lastScene]) sc?.dispose?.();
     this.scene = null;
+    this.lastScene = null;
     if (!c) {
       this.begin();
       return;
@@ -518,6 +520,8 @@ export class Director {
     const g = this.g;
     if (this.scene) {
       this.scene.update(dt);
+      // A death you've already seen can be skipped.
+      if (this.scene instanceof DeathScene && this.deaths > 1 && this.scene.t > 13.5 && g.input.pressed.size) this.scene.finish();
       return;
     }
     if (g.state !== "play") return;

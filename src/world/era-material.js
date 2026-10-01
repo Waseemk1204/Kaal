@@ -67,8 +67,9 @@ float eraMask(vec3 p) {
 // plus `ab: { color, map }` for the Ab look and `mode`.
 export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
   const material = new THREE.MeshStandardMaterial(params);
+  // Something that only exists now takes its look from the plain params.
   const abColor = new THREE.Color(ab.color ?? params.color ?? 0xffffff);
-  const abMap = ab.map ?? null;
+  const abMap = ab.map ?? (mode === "ab" ? params.map ?? null : null);
   const abRough = ab.roughness ?? material.roughness;
   material.defines = { ERA_MODE: MODES[mode] };
   if (abMap) material.defines.ERA_ABMAP = "";

@@ -34,7 +34,7 @@ function palette() {
     dal: tabOnly(0xd8a030, { r: 0.4 }),
     dust: abOnly(0x5a5650),
     mould: abOnly(0x3a4a2a),
-    bark: abOnly(0x2e2620, { map: barkTexture() }),
+    bark: abOnly(0x8a7c6c, { map: barkTexture() }),
     clockFace: abOnly(0xffffff, { map: clockTexture(9, 47, "#e8dcc0"), r: 0.8 }),
     tulsi: tabOnly(0x2f6a2a),
     terracotta: tabOnly(0xa0522d),

@@ -28,6 +28,7 @@ export class KaalView {
     this.root.visible = false;
     scene.add(this.root);
     this.r = this.root.userData;
+    this.shoulderDeco = this.r.shoulderDeco;
     this.ash = new Ash(scene);
     this.time = 0;
     this.pose = {}; // smoothed joint values
@@ -78,6 +79,11 @@ export class KaalView {
     root.rotation.y = s.yaw;
 
     const r = this.r;
+    // A cutscene is posing it by hand.
+    if (this.manual) {
+      this.ash.update(dt, this.ashSources, false, true);
+      return;
+    }
     // Held: freeze everything but the head.
     if (!held) this.poseBody(dt, s, { dormant, playerDist });
     // Head: brain's head yaw, around world up (the frame here is flipped).

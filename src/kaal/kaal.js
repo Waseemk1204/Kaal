@@ -21,6 +21,7 @@ export class Kaal {
     this.dist = 99;
     this.tickLevel = 0;
     this.enabled = true;
+    this.presence = true;
     this.onEvent = () => {};
   }
 
@@ -99,7 +100,8 @@ export class Kaal {
     this.audio.setPosition(s.present ? s.x : 0, s.present ? hy : 2, s.present ? s.z : -9);
     this.audio.update(dt, this.tickLevel * (this.silenced ? 0 : 1));
 
-    // On you: tremble, heart, breath, grain.
+    // On you: tremble, heart, breath, grain. (Cutscenes take these over.)
+    if (this.presence === false) return;
     const close = ramp(PRESENCE.close, 0.8);
     g.hands.tremble = 0.15 + this.near * 0.9;
     g.sounds.body(dt, { heart: close > 0 ? 1.0 + close * 1.4 : 0, breath: this.near > 0.2 ? 0.25 + this.near * 0.5 : 0 });
