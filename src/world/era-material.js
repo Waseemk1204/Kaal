@@ -126,7 +126,7 @@ export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
         `#include <emissivemap_fragment>
         float eraRim = 4.0 * eraM * (1.0 - eraM);
         eraRim = pow(eraRim, 6.0) * (1.0 - uEraForce);
-        totalEmissiveRadiance += eraRim * vec3(1.0, 0.3, 0.05) * 1.5;`,
+        totalEmissiveRadiance += eraRim * vec3(1.0, 0.3, 0.05) * 1.0;`,
       );
   };
   return material;

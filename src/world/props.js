@@ -232,7 +232,7 @@ export class Props {
     // Chairs: Munna and Mummy on the south side, Papa and Dadi on the north.
     this.chairs = {};
     for (const [id, seat] of Object.entries(SPOTS.seat)) {
-      const facing = seat.z > 0 ? Math.PI : 0; // facing the table
+      const facing = seat.z > 0 ? 0 : Math.PI; // backrest away from the table
       const c = new THREE.Group();
       c.position.set(seat.x, 0, seat.z * 1.05);
       c.rotation.y = facing;
@@ -359,8 +359,8 @@ export class Props {
     this.fanSpeed = 0;
 
     // A tube light on the north wall.
-    box(g, P.wire, -1.6, 2.5, -2.38, 1.22, 0.05, 0.05);
-    this.tube = add(g, geo("cyl", 0.016, 0.016, 1.15, 10), eraMaterial({ mode: "tab", color: 0xf4f4ee, emissive: 0xdde8ff, emissiveIntensity: 0 }), -1.6, 2.47, -2.33, { rz: Math.PI / 2, shadow: false });
+    box(g, P.wire, -1.6, 2.12, -2.38, 1.22, 0.05, 0.05);
+    this.tube = add(g, geo("cyl", 0.016, 0.016, 1.15, 10), eraMaterial({ mode: "tab", color: 0xf4f4ee, emissive: 0xdde8ff, emissiveIntensity: 0 }), -1.6, 2.09, -2.33, { rz: Math.PI / 2, shadow: false });
 
     // The demolition notice nailed inside the front door.
     const notice = canvasTexture(

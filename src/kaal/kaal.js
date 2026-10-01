@@ -96,7 +96,7 @@ export class Kaal {
     this.near = s.present ? ramp(PRESENCE.near, 0.8) : 0;
     this.duck = s.present ? 1 - ramp(PRESENCE.duckFrom, PRESENCE.close) : 1;
     const stageLevel = [0.18, 0.4, 0.75, 0.75, 1][g.stage] ?? 0.6;
-    this.tickLevel = s.present ? stageLevel : 0.08 * (g.stage === STAGE.RUMOUR ? 1 : 0);
+    this.tickLevel = s.present ? stageLevel : this.tickBoost ?? 0.08 * (g.stage === STAGE.RUMOUR ? 1 : 0);
     this.audio.setPosition(s.present ? s.x : 0, s.present ? hy : 2, s.present ? s.z : -9);
     this.audio.update(dt, this.tickLevel * (this.silenced ? 0 : 1));
 

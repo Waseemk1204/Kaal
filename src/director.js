@@ -111,7 +111,7 @@ export class Director {
         wide: d.wide ?? 0.9,
         tabOnly: d.era === "tab",
         abOnly: d.era === "ab",
-        can: () => !p.picked && (!d.when || d.when()) && g.state === "play",
+        can: () => !p.picked && !this.scene && (!d.when || d.when()) && g.state === "play",
         use: () => {
           if (!d.keep) {
             p.picked = true;
@@ -278,7 +278,7 @@ export class Director {
     const g = this.g;
     this.build();
     this.reset();
-    if (this.dev) {
+    if (this.dev && !this.dev.prologue) {
       this.startPlay();
       if (this.dev.at === "kitchen") g.player.place(3.4, 0, -Math.PI / 2);
       if (this.dev.at === "dadi") g.player.place(-3.4, 0, Math.PI / 2);
@@ -296,11 +296,14 @@ export class Director {
       if (this.dev.die) setTimeout(() => this.die(), 500);
       return;
     }
-    this.g.state = "scene";
-    this.scene = new Prologue(g, () => {
+    g.state = "scene";
+    g.noStrike = true;
+    g.kaal.tickBoost = 0;
+    this.scene = new Prologue(g, (opts) => {
       this.scene = null;
-      this.startPlay();
+      this.startPlay(opts);
     });
+    this.scene.onBlackout = () => (g.noStrike = false);
   }
 
   // Back to the start of everything (no checkpoint).
@@ -341,10 +344,12 @@ export class Director {
     }
   }
 
-  startPlay() {
+  startPlay({ keepPlace = false } = {}) {
     const g = this.g;
-    g.player.place(SPOTS.start.x, SPOTS.start.z, SPOTS.start.yaw);
+    if (!keepPlace) g.player.place(SPOTS.start.x, SPOTS.start.z, SPOTS.start.yaw);
     g.player.eye = 1.65;
+    g.noStrike = false;
+    g.kaal.tickBoost = undefined;
     g.eraForce = 0;
     g.cameraOverride = false;
     g.start();

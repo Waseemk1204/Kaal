@@ -48,7 +48,7 @@ function skinOld(ctx, w, h) {
     ctx.stroke();
   }
   // Liver spots.
-  for (let i = 0; i < 30; i += 1) {
+  for (let i = 0; i < (w > 128 ? 70 : 30); i += 1) {
     ctx.fillStyle = `rgba(${70 + rand() * 30},${40 + rand() * 20},25,${0.4 + rand() * 0.4})`;
     ctx.beginPath();
     ctx.ellipse(rand() * w, rand() * h, 2 + rand() * 6, 2 + rand() * 5, rand() * 3, 0, Math.PI * 2);
@@ -63,6 +63,14 @@ export function skinMaterial() {
   const old = canvasTexture(128, 128, skinOld);
   SKIN = eraMaterial({ map: young, roughness: 0.65, ab: { map: old, roughness: 0.8 } });
   return SKIN;
+}
+
+// Always old: for the moment you see your hand clearly, in full light.
+let OLD = null;
+export function oldSkinMaterial() {
+  if (OLD) return OLD;
+  OLD = new THREE.MeshStandardMaterial({ map: canvasTexture(256, 256, skinOld), color: 0x8a7464, roughness: 0.8 });
+  return OLD;
 }
 
 const SLEEVE = eraMaterial({ color: 0x8a8378, roughness: 1, ab: { color: 0x4a4740, roughness: 1 } });

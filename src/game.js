@@ -95,7 +95,7 @@ export class Game {
   // ------------------------------------------------------------ matches
 
   tryStrike() {
-    if (this.matchLit || this.strikeT >= 0) return;
+    if (this.matchLit || this.strikeT >= 0 || this.noStrike) return;
     if (this.player.inTank && this.player.falling) return;
     const tab = this.inv.tab > 0 && this.inv.tabFresh > 0;
     if (!tab && this.inv.ab <= 0) {
@@ -115,7 +115,8 @@ export class Game {
     const before = this.strikeT;
     this.strikeT += dt;
     if (before < 0.3 && this.strikeT >= 0.3) {
-      const fail = !this.strikeTab && Math.random() < MATCH.abFailChance;
+      const fail = !this.strikeTab && !this.sureStrike && Math.random() < MATCH.abFailChance;
+      this.sureStrike = false;
       this.sounds.strike(!fail);
       if (fail) {
         this.strikeT = -1;
@@ -250,7 +251,7 @@ export class Game {
     this.kaal?.update?.(dt);
     this.director?.update?.(dt);
     if (playing) this.updateInteraction(dt);
-    else {
+    else if (!this.director?.scene?.ownsPrompt) {
       this.ui.setPrompt("");
       this.ui.setHold(0);
     }

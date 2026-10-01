@@ -103,10 +103,10 @@ export class UI {
     this.pageEl.classList.add("hidden");
   }
 
-  showCard(title, sub, actions) {
+  showCard(title, sub, actions, { image = null } = {}) {
     this.card.classList.remove("hidden");
     // Restart the animations.
-    this.card.innerHTML = `<h2>${title}</h2><p>${sub}</p><div class="card-actions"></div>`;
+    this.card.innerHTML = `${image ? `<img class="card-photo" src="${image}" alt="The family photograph" />` : ""}<h2>${title}</h2><p>${sub}</p><div class="card-actions"></div>`;
     const row = this.card.querySelector(".card-actions");
     for (const a of actions) {
       const b = document.createElement("button");

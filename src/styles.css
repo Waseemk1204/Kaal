@@ -69,6 +69,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
 /* -------------------------------------------------------------- cards */
 .card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; }
 .card h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(30px, 5vw, 54px); letter-spacing: 0.22em; margin: 0 0 16px; color: var(--ink); opacity: 0; animation: rise 2.4s 0.4s forwards; }
+.card-photo { width: min(360px, 70vw); margin-bottom: 26px; box-shadow: 0 12px 40px #000; transform: rotate(-1.5deg); opacity: 0; animation: rise 3s 0.2s forwards; filter: sepia(0.35); }
 .card p { font-family: var(--serif); font-style: italic; font-size: 21px; color: var(--dim); margin: 0 0 36px; max-width: 640px; opacity: 0; animation: rise 2.4s 1.6s forwards; }
 .card-actions { display: flex; gap: 14px; opacity: 0; animation: rise 1.2s 3.2s forwards; }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

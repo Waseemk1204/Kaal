@@ -194,7 +194,12 @@ function frame(now) {
   last = now;
   if (!$("#title").classList.contains("hidden")) drawTitleFlame(now);
   if (game.state !== "paused" && game.state !== "idle") {
-    game.update(dt);
+    // One bad frame shouldn't stop the game.
+    try {
+      game.update(dt);
+    } catch (err) {
+      console.error(err);
+    }
     game.render();
   } else if (game.state === "idle") {
     input.endFrame();
