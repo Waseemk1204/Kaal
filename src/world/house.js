@@ -6,25 +6,39 @@
 import * as THREE from "three";
 import { WALLS, ROOMS, CEILING, WALL_T, PIT_AREA, LADDER, DOOR_H } from "../../shared/house-map.js";
 import { eraMaterial } from "./era-material.js";
-import { TEX, buildTextures, worldUV, rand } from "./textures.js";
+import { TEX, buildTextures, worldUV, rand, normalFrom } from "./textures.js";
 
 export const MAT = {};
 
 function materials() {
   if (MAT.ready) return MAT;
   buildTextures();
-  MAT.wall = eraMaterial({ map: TEX.wallTab, roughness: 0.92, ab: { map: TEX.wallAb, roughness: 1 } });
-  MAT.floor = eraMaterial({ map: TEX.floorTab, roughness: 0.35, ab: { map: TEX.floorAb, roughness: 0.95 } });
-  MAT.ceil = eraMaterial({ map: TEX.ceilTab, roughness: 0.95, ab: { map: TEX.ceilAb } });
-  MAT.wood = eraMaterial({ map: TEX.woodTab, roughness: 0.5, ab: { map: TEX.woodAb, roughness: 0.95 } });
+  // Relief from each texture's own lines: plaster, cracks, brick, grain.
+  const N = (t, k) => normalFrom(t, k);
+  const n = {
+    wallTab: N(TEX.wallTab, 1.2),
+    wallAb: N(TEX.wallAb, 4),
+    floorTab: N(TEX.floorTab, 1.5),
+    floorAb: N(TEX.floorAb, 4),
+    ceilAb: N(TEX.ceilAb, 3),
+    woodTab: N(TEX.woodTab, 2),
+    woodAb: N(TEX.woodAb, 5),
+    brick: N(TEX.brickWet, 5),
+    yardAb: N(TEX.yardAb, 3),
+  };
+  const ns = new THREE.Vector2(1, 1);
+  MAT.wall = eraMaterial({ map: TEX.wallTab, normalMap: n.wallTab, normalScale: ns, roughness: 0.92, ab: { map: TEX.wallAb, normalMap: n.wallAb, roughness: 1 } });
+  MAT.floor = eraMaterial({ map: TEX.floorTab, normalMap: n.floorTab, roughness: 0.35, ab: { map: TEX.floorAb, normalMap: n.floorAb, roughness: 0.95 } });
+  MAT.ceil = eraMaterial({ map: TEX.ceilTab, normalMap: n.ceilAb, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.95, ab: { map: TEX.ceilAb, normalMap: n.ceilAb } });
+  MAT.wood = eraMaterial({ map: TEX.woodTab, normalMap: n.woodTab, roughness: 0.5, ab: { map: TEX.woodAb, normalMap: n.woodAb, roughness: 0.95 } });
   MAT.woodTab = eraMaterial({ mode: "tab", map: TEX.woodTab, roughness: 0.5 });
   MAT.steel = eraMaterial({ map: TEX.steelTab, metalness: 0.85, roughness: 0.25, ab: { map: TEX.rust, roughness: 0.9 } });
   MAT.jaali = eraMaterial({ color: 0x3d5a3a, metalness: 0.3, roughness: 0.6, ab: { map: TEX.rust, roughness: 0.9 } });
-  MAT.brick = eraMaterial({ map: TEX.brickWet, roughness: 0.9, ab: { map: TEX.brickWet } });
+  MAT.brick = eraMaterial({ map: TEX.brickWet, normalMap: n.brick, roughness: 0.9, ab: { map: TEX.brickWet, normalMap: n.brick } });
   MAT.tankFloor = eraMaterial({ color: 0x0d0f0b, roughness: 0.2, ab: { color: 0x0b0d0a, roughness: 0.15 } });
   MAT.floorTabOnly = eraMaterial({ mode: "tab", map: TEX.floorTab, roughness: 0.35 });
   MAT.ceilTabOnly = eraMaterial({ mode: "tab", map: TEX.ceilTab, roughness: 0.95 });
-  MAT.yard = eraMaterial({ map: TEX.yardTab, roughness: 0.95, ab: { map: TEX.yardAb } });
+  MAT.yard = eraMaterial({ map: TEX.yardTab, normalMap: n.yardAb, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.95, ab: { map: TEX.yardAb, normalMap: n.yardAb } });
   MAT.rubble = eraMaterial({ mode: "ab", color: 0x4a4740, roughness: 1 });
   MAT.rubbleBrick = eraMaterial({ mode: "ab", color: 0x4a2c22, roughness: 1 });
   MAT.rustAb = eraMaterial({ mode: "ab", map: TEX.rust, roughness: 0.9 });
@@ -268,7 +282,7 @@ export class House {
 // Moonlight and the dim blue fill of the dark.
 export function moonlight(scene) {
   scene.fog = new THREE.FogExp2(0x070a10, 0.05);
-  const hemi = new THREE.HemisphereLight(0x5a6e96, 0x1a1712, 12);
+  const hemi = new THREE.HemisphereLight(0x5a6e96, 0x343840, 12);
   scene.add(hemi);
   const moon = new THREE.DirectionalLight(0x9fb6e0, 4.5);
   moon.position.set(4, 14, 9);

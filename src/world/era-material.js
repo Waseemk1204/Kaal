@@ -26,7 +26,7 @@ export const ERA = {
 
 const MODES = { both: 0, tab: 1, ab: 2 };
 
-const COMMON = /* glsl */ `
+export const ERA_GLSL = /* glsl */ `
 uniform vec4 uEraLights[${MAX_ERA_LIGHTS}];
 uniform float uEraForce;
 uniform float uEraTime;
@@ -71,8 +71,10 @@ export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
   const abColor = new THREE.Color(ab.color ?? params.color ?? 0xffffff);
   const abMap = ab.map ?? (mode === "ab" ? params.map ?? null : null);
   const abRough = ab.roughness ?? material.roughness;
+  const abNormal = ab.normalMap ?? null;
   material.defines = { ERA_MODE: MODES[mode] };
   if (abMap) material.defines.ERA_ABMAP = "";
+  if (abNormal && material.normalMap) material.defines.ERA_ABNORMAL = "";
   material.userData.era = { mode, abColor, abMap };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uEraLights = ERA.lights;
@@ -82,6 +84,7 @@ export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
     shader.uniforms.uAbColor = { value: abColor };
     shader.uniforms.uAbMap = { value: abMap };
     shader.uniforms.uAbRough = { value: abRough };
+    shader.uniforms.uAbNormal = { value: abNormal };
 
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\nvarying vec3 vEraPos;\nvarying vec2 vEraUv;`)
@@ -97,7 +100,7 @@ export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
       );
 
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", `#include <common>\n${COMMON}\nuniform vec3 uAbColor;\nuniform sampler2D uAbMap;\nuniform float uAbRough;\nfloat eraM;`)
+      .replace("#include <common>", `#include <common>\n${ERA_GLSL}\nuniform vec3 uAbColor;\nuniform sampler2D uAbMap;\nuniform float uAbRough;\nuniform sampler2D uAbNormal;\nfloat eraM;`)
       .replace(
         "#include <map_fragment>",
         `eraM = eraMask(vEraPos);
@@ -120,6 +123,20 @@ export function eraMaterial({ mode = "both", ab = {}, ...params } = {}) {
         "#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
         roughnessFactor = mix(uAbRough, roughnessFactor, eraM);`,
+      )
+      .replace(
+        "#include <normal_fragment_maps>",
+        `#if defined( USE_NORMALMAP_TANGENTSPACE )
+          vec3 mapN = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;
+          #ifdef ERA_ABNORMAL
+            vec3 mapNAb = texture2D( uAbNormal, vNormalMapUv ).xyz * 2.0 - 1.0;
+            mapN = mix( mapNAb, mapN, eraM );
+          #endif
+          mapN.xy *= normalScale;
+          normal = normalize( tbn * mapN );
+        #else
+          #include <normal_fragment_maps>
+        #endif`,
       )
       .replace(
         "#include <emissivemap_fragment>",

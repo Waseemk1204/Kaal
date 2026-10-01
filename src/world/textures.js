@@ -72,6 +72,20 @@ const WALL_W = 512;
 const WALL_H = 820;
 const DADO = 1.0 / 3.2;
 
+// Soft darkening where walls meet floor and ceiling (cheap ambient occlusion).
+function wallEdges(ctx, w, h, strength = 0.45) {
+  let g = ctx.createLinearGradient(0, h, 0, h * 0.9);
+  g.addColorStop(0, `rgba(0,0,0,${strength})`);
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, h * 0.9, w, h * 0.1);
+  g = ctx.createLinearGradient(0, 0, 0, h * 0.08);
+  g.addColorStop(0, `rgba(0,0,0,${strength * 0.8})`);
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h * 0.08);
+}
+
 function tabWall(ctx, w, h) {
   // Pale green distemper above, glossy darker green oil paint below.
   ctx.fillStyle = "#aac7b4";
@@ -86,6 +100,7 @@ function tabWall(ctx, w, h) {
   ctx.fillRect(0, dadoTop - 3, w, 5);
   // A little wear along the skirting.
   blotches(ctx, w, 20, 10, "#3c3a2e", 10, 30, 0.2);
+  wallEdges(ctx, w, h, 0.3);
 }
 
 function abWall(ctx, w, h) {
@@ -149,6 +164,7 @@ function abWall(ctx, w, h) {
   cracks(ctx, w, h, 22, "rgba(20,20,16,0.8)");
   speckle(ctx, w, h, 6000, ["#7a7b70", "#4d4f46", "#30322b"], 2, 0.4);
   blotches(ctx, w, h, 12, "#3f4a2a", 10, 40, 0.5); // mould
+  wallEdges(ctx, w, h, 0.5);
 }
 
 export const TEX = {};
@@ -309,4 +325,41 @@ export function worldUV(geometry, su = 2, sv = 3.2, { yOffset = 0 } = {}) {
   }
   uv.needsUpdate = true;
   return geometry;
+}
+
+// A normal map from a texture's own light and dark: dark lines (mortar,
+// cracks, grain) read as grooves. strength: how deep.
+export function normalFrom(texture, strength = 2, { invert = false } = {}) {
+  const src = texture.image;
+  const w = src.width;
+  const h = src.height;
+  const data = src.getContext("2d").getImageData(0, 0, w, h).data;
+  const height = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i += 1) {
+    const l = (data[i * 4] * 0.3 + data[i * 4 + 1] * 0.59 + data[i * 4 + 2] * 0.11) / 255;
+    height[i] = invert ? 1 - l : l;
+  }
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const ctx = out.getContext("2d");
+  const img = ctx.createImageData(w, h);
+  const at = (x, y) => height[((y + h) % h) * w + ((x + w) % w)];
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const k = (y * w + x) * 4;
+      img.data[k] = ((-dx / len) * 0.5 + 0.5) * 255;
+      img.data[k + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+      img.data[k + 2] = ((1 / len) * 0.5 + 0.5) * 255;
+      img.data[k + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(out);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
 }

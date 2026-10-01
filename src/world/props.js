@@ -217,6 +217,64 @@ export class Props {
     this.kitchen();
     this.dadi();
     this.courtyard();
+    this.cobwebs();
+  }
+
+  // Webs in the corners, on the fan, on the backs of chairs. Only now.
+  cobwebs() {
+    const tex = canvasTexture(
+      256,
+      256,
+      (ctx, w, h) => {
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = "rgba(220,220,215,0.55)";
+        ctx.lineWidth = 1;
+        // Spokes from the corner.
+        const spokes = 9;
+        for (let i = 0; i <= spokes; i += 1) {
+          const a = (i / spokes) * (Math.PI / 2);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(a) * w * (0.85 + rand() * 0.15), Math.sin(a) * h * (0.85 + rand() * 0.15));
+          ctx.stroke();
+        }
+        // Sagging threads between them.
+        for (let r = 20; r < w; r += 14 + rand() * 10) {
+          ctx.globalAlpha = 0.35 + rand() * 0.4;
+          ctx.beginPath();
+          for (let i = 0; i <= spokes; i += 1) {
+            const a = (i / spokes) * (Math.PI / 2);
+            const rr = r * (0.95 + rand() * 0.1);
+            const x = Math.cos(a) * rr;
+            const y = Math.sin(a) * rr;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.quadraticCurveTo(Math.cos(a - 0.08) * rr * 0.93, Math.sin(a - 0.08) * rr * 0.93, x, y);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+      { repeat: false },
+    );
+    const web = eraMaterial({ mode: "ab", map: tex, transparent: true, alphaTest: 0.08, depthWrite: false, side: THREE.DoubleSide, roughness: 1 });
+    const corner = (x, y, z, ry, size = 0.7, rx = 0) => {
+      const m = add(this.group, new THREE.PlaneGeometry(size, size).translate(size / 2, -size / 2, 0), web, x, y, z, { ry, rx, shadow: false });
+      m.renderOrder = 4;
+    };
+    // Ceiling corners: a web across each, tilted.
+    const corners = [
+      [-2.95, 3.15, -2.45, Math.PI / 4], [2.95, 3.15, -2.45, -Math.PI / 4], [-2.95, 3.15, 2.45, (Math.PI * 3) / 4], [2.95, 3.15, 2.45, (-Math.PI * 3) / 4],
+      [3.05, 3.15, -2.45, Math.PI / 4], [6.95, 3.15, -2.45, -Math.PI / 4], [6.95, 3.15, 1.45, (-Math.PI * 3) / 4],
+      [-7.45, 3.15, 1.45, (Math.PI * 3) / 4], [-3.05, 3.15, 1.45, (-Math.PI * 3) / 4], [-3.05, 3.15, -2.45, -Math.PI / 4],
+    ];
+    for (const [x, y, z, ry] of corners) corner(x, y, z, ry, 0.6 + rand() * 0.5, -0.5);
+    // Doorway tops.
+    corner(2.92, 2.1, -0.5, -Math.PI / 2, 0.45);
+    corner(-2.92, 2.1, 0.5, Math.PI / 2, 0.45);
+    // On the fan and the chair backs.
+    corner(0.1, 2.85, 0.6, 0.3, 0.5, Math.PI / 2);
+    corner(0.45, 1.05, -1.25, Math.PI, 0.35);
+    corner(-0.45, 1.05, 1.25, 0, 0.35);
   }
 
   // --------------------------------------------------------------- dining

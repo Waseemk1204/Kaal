@@ -6,6 +6,7 @@
 
 import * as THREE from "three";
 import { House, moonlight } from "./world/house.js";
+import { Shafts } from "./world/shafts.js";
 import { setEraLights } from "./world/era-material.js";
 import { Flame, LightPool } from "./world/flame.js";
 import { Hands } from "./world/hands.js";
@@ -31,6 +32,7 @@ export class Game {
     this.post = new Post(renderer);
     this.house = new House(this.scene);
     this.moon = moonlight(this.scene);
+    this.shafts = new Shafts(this.scene, this.house, this.moon.moon.target.position.clone().sub(this.moon.moon.position));
     this.pool = new LightPool(this.scene, 5);
     this.hands = new Hands(this.camera);
     this.player = new Player();

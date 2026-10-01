@@ -1,5 +1,7 @@
-// One small post pass: the scene renders into an HDR target, then a single
-// fullscreen shader adds film grain, vignette, a little chromatic aberration,
+// The post pass: the scene renders into an HDR target. Bright things (flames,
+// the burning edge of 1987, moonlight on plaster) bloom at quarter size. A
+// final shader grades the picture (teal in the shadows, amber in the light),
+// then adds film grain, vignette, a little chromatic aberration,
 // desaturation, the milky cataract haze of the death, a red-black bleed, and
 // a fade to black. Tone mapping and sRGB happen here too.
 
@@ -19,10 +21,51 @@ export class Post {
       blood: 0,
       exposure: 1,
       warp: 0,
+      bloom: 0.9,
+      grade: 1,
     };
+    // Bloom: a bright pass, then a wide blur, at quarter size.
+    const half = { type: THREE.HalfFloatType };
+    this.bloomA = new THREE.WebGLRenderTarget(1, 1, half);
+    this.bloomB = new THREE.WebGLRenderTarget(1, 1, half);
+    const quadVS = /* glsl */ `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+    this.brightMat = new THREE.ShaderMaterial({
+      uniforms: { tScene: { value: this.target.texture }, uThreshold: { value: 0.9 } },
+      vertexShader: quadVS,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D tScene; uniform float uThreshold; varying vec2 vUv;
+        void main() {
+          vec3 c = texture2D(tScene, vUv).rgb;
+          float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+          gl_FragColor = vec4(c * smoothstep(uThreshold, uThreshold * 2.2, l), 1.0);
+        }`,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    this.blurMat = new THREE.ShaderMaterial({
+      uniforms: { tIn: { value: null }, uDir: { value: new THREE.Vector2() } },
+      vertexShader: quadVS,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D tIn; uniform vec2 uDir; varying vec2 vUv;
+        void main() {
+          vec3 c = texture2D(tIn, vUv).rgb * 0.227;
+          c += texture2D(tIn, vUv + uDir * 1.385).rgb * 0.316;
+          c += texture2D(tIn, vUv - uDir * 1.385).rgb * 0.316;
+          c += texture2D(tIn, vUv + uDir * 3.231).rgb * 0.07;
+          c += texture2D(tIn, vUv - uDir * 3.231).rgb * 0.07;
+          gl_FragColor = vec4(c, 1.0);
+        }`,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    });
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         tScene: { value: this.target.texture },
+        tBloom: { value: this.bloomA.texture },
+        uBloom: { value: 0.9 },
+        uGrade: { value: 1 },
         uTime: { value: 0 },
         uGrain: { value: 0 },
         uVignette: { value: 0 },
@@ -41,6 +84,8 @@ export class Post {
       `,
       fragmentShader: /* glsl */ `
         uniform sampler2D tScene;
+        uniform sampler2D tBloom;
+        uniform float uBloom, uGrade;
         uniform float uTime, uGrain, uVignette, uAberration, uDesat, uHaze, uFade, uBlood, uExposure, uWarp, uAspect;
         varying vec2 vUv;
         float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -67,8 +112,15 @@ export class Post {
             float milk = smoothstep(0.05, 0.5, r2) * uHaze;
             col = mix(col, vec3(0.75, 0.74, 0.7) * (0.4 + uExposure * 0.2), milk * 0.85);
           }
+          col += texture2D(tBloom, uv).rgb * uBloom;
           col *= uExposure;
           float l = dot(col, vec3(0.299, 0.587, 0.114));
+          // Grade: cold teal in the shadows, warm amber where the light is.
+          float lw = clamp(l * 1.6, 0.0, 1.0);
+          vec3 shadowTint = vec3(0.86, 0.97, 1.12);
+          vec3 lightTint = vec3(1.08, 0.99, 0.86);
+          col *= mix(vec3(1.0), mix(shadowTint, lightTint, smoothstep(0.05, 0.6, lw)), uGrade);
+          l = dot(col, vec3(0.299, 0.587, 0.114));
           col = mix(col, vec3(l), clamp(uDesat, 0.0, 1.0));
           float vig = smoothstep(0.85, 0.15, r2 * (1.0 + uVignette * 1.8));
           col *= mix(1.0, vig, clamp(uVignette, 0.0, 1.0));
@@ -94,6 +146,11 @@ export class Post {
 
   setSize(w, h, ratio) {
     this.target.setSize(Math.floor(w * ratio), Math.floor(h * ratio));
+    const bw = Math.max(1, Math.floor((w * ratio) / 4));
+    const bh = Math.max(1, Math.floor((h * ratio) / 4));
+    this.bloomA.setSize(bw, bh);
+    this.bloomB.setSize(bw, bh);
+    this.texel = new THREE.Vector2(1 / bw, 1 / bh);
     this.material.uniforms.uAspect.value = w / h;
   }
 
@@ -110,9 +167,29 @@ export class Post {
     u.uBlood.value = f.blood;
     u.uExposure.value = f.exposure;
     u.uWarp.value = f.warp;
-    this.renderer.setRenderTarget(this.target);
-    this.renderer.render(scene, camera);
-    this.renderer.setRenderTarget(null);
+    u.uBloom.value = f.bloom;
+    u.uGrade.value = f.grade;
+    const r = this.renderer;
+    r.setRenderTarget(this.target);
+    r.render(scene, camera);
+    // Bloom.
+    this.quad.material = this.brightMat;
+    r.setRenderTarget(this.bloomA);
+    r.render(this.scene, this.camera);
+    this.quad.material = this.blurMat;
+    for (let i = 0; i < 3; i += 1) {
+      const spread = 1 + i * 1.5;
+      this.blurMat.uniforms.tIn.value = this.bloomA.texture;
+      this.blurMat.uniforms.uDir.value.set(this.texel.x * spread, 0);
+      r.setRenderTarget(this.bloomB);
+      r.render(this.scene, this.camera);
+      this.blurMat.uniforms.tIn.value = this.bloomB.texture;
+      this.blurMat.uniforms.uDir.value.set(0, this.texel.y * spread);
+      r.setRenderTarget(this.bloomA);
+      r.render(this.scene, this.camera);
+    }
+    this.quad.material = this.material;
+    r.setRenderTarget(null);
     this.renderer.render(this.scene, this.camera);
   }
 }
