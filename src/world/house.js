@@ -259,7 +259,7 @@ export class House {
     scene.add(stars);
     // The moon.
     const moon = new THREE.Mesh(new THREE.CircleGeometry(2.2, 32), new THREE.MeshBasicMaterial({ color: 0xc9d4ea, fog: false }));
-    moon.position.set(22, 52, -40);
+    moon.position.set(22, 52, 40);
     moon.lookAt(0, 0, 0);
     scene.add(moon);
   }
@@ -271,7 +271,7 @@ export function moonlight(scene) {
   const hemi = new THREE.HemisphereLight(0x5a6e96, 0x1a1712, 12);
   scene.add(hemi);
   const moon = new THREE.DirectionalLight(0x9fb6e0, 4.5);
-  moon.position.set(5, 14, -9);
+  moon.position.set(4, 14, 9);
   moon.target.position.set(0, 0, 0);
   moon.castShadow = true;
   moon.shadow.mapSize.set(2048, 2048);

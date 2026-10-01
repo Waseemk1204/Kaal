@@ -55,6 +55,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   font-size: 20px; color: rgba(233, 226, 210, 0.7); text-shadow: 0 0 8px #000; opacity: 0; transition: opacity 1.2s; text-align: center;
 }
 .note.on { opacity: 1; }
+.controls { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font-size: 12px; letter-spacing: 0.08em; color: rgba(233, 226, 210, 0.55); white-space: nowrap; opacity: 0; transition: opacity 1.5s; }
+.controls.on { opacity: 1; }
+.controls b { color: var(--ink); font-weight: 500; }
 
 /* ---------------------------------------------------------- the diary */
 .page { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, 0.72); }
@@ -77,8 +80,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
 /* ------------------------------------------------------------ screens */
 .screen { position: absolute; inset: 0; display: grid; place-items: center; background: #000; padding: 16px; }
 .title { background: radial-gradient(ellipse at 50% 60%, #1a0f06 0%, #000 60%); }
-.title-flame { position: absolute; left: 50%; top: 50%; width: 140px; height: 210px; transform: translate(-50%, -78%); opacity: 0.9; }
-.title-body { position: relative; text-align: center; margin-top: 18vh; }
+.title-flame { display: block; width: 84px; height: 126px; margin: 0 auto 6px; opacity: 0.95; }
+.title-body { position: relative; text-align: center; }
 .title h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(64px, 12vw, 132px); letter-spacing: 0.42em; margin: 0 0 0 0.42em; color: #d8cfbd; text-shadow: 0 0 40px rgba(255, 140, 40, 0.15); }
 .tagline { font-family: var(--serif); font-style: italic; font-size: 21px; color: var(--dim); margin: 6px 0 38px; }
 .menu { display: flex; flex-direction: column; gap: 10px; align-items: center; }
@@ -112,4 +115,11 @@ input[type="range"] { width: 100%; max-width: 320px; accent-color: var(--ember);
 @media (max-width: 600px) {
   .title h1 { letter-spacing: 0.25em; margin-left: 0.25em; }
   .subtitle { font-size: calc(18px * var(--sub-scale)); }
+}
+@media (max-height: 640px) {
+  .title-flame { width: 56px; height: 84px; }
+  .title h1 { font-size: clamp(44px, 9vw, 80px); }
+  .tagline { margin-bottom: 18px; font-size: 17px; }
+  .warn { margin-top: 18px; }
+  .btn { padding: 9px 26px; }
 }

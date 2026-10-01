@@ -125,14 +125,14 @@ export const SPOTS = {
 
 // Solid boxes for walls (thickness WALL_T). With kaal=true, "back" openings
 // are passable; without it they are solid.
-export function wallBoxes({ kaal = false } = {}) {
+export function wallBoxes({ kaal = false, sight = false } = {}) {
   const boxes = [];
   const half = WALL_T / 2;
   for (const wall of WALLS) {
     const spans = [];
     let cursor = wall.from;
     const open = wall.openings
-      .filter((o) => o.kind === "door" || (kaal && o.kind === "back"))
+      .filter((o) => o.kind === "door" || (kaal && o.kind === "back") || (sight && (o.kind === "window" || o.kind === "back")))
       .sort((a, b) => a.from - b.from);
     for (const o of open) {
       if (o.from > cursor) spans.push([cursor, o.from]);
@@ -152,6 +152,7 @@ export function wallBoxes({ kaal = false } = {}) {
 
 const PLAYER_WALLS = wallBoxes();
 const KAAL_WALLS = wallBoxes({ kaal: true });
+const SIGHT_WALLS = wallBoxes({ sight: true });
 
 export function inBox(b, x, z, pad = 0) {
   return x > b.x1 - pad && x < b.x2 + pad && z > b.z1 - pad && z < b.z2 + pad;
@@ -238,9 +239,9 @@ function segmentHitsBox(ax, az, bx, bz, b) {
 }
 
 // Can light (or a look) travel between two points without a wall in the
-// way? Windows and the back doorways let light through.
+// way? Doorways, jaalis and the back doorways let it through.
 export function lineOfSight(a, b) {
-  for (const box of KAAL_WALLS) if (segmentHitsBox(a.x, a.z, b.x, b.z, box)) return false;
+  for (const box of SIGHT_WALLS) if (segmentHitsBox(a.x, a.z, b.x, b.z, box)) return false;
   return true;
 }
 

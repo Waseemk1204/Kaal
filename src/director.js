@@ -354,6 +354,9 @@ export class Director {
     g.cameraOverride = false;
     g.start();
     this.save("start");
+    const controls = document.querySelector("#controls");
+    controls.classList.add("on");
+    setTimeout(() => controls.classList.remove("on"), 14000);
     if (!this.dev) {
       setTimeout(() => this.memory("As long as the lamp burns, Kaal waits.", 4), 1500);
       setTimeout(() => g.ui.note("Their places at the table are empty.", 4), 6500);

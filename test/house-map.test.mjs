@@ -41,6 +41,11 @@ test("light doesn't pass through walls but does through doorways", () => {
   assert.equal(lineOfSight({ x: 0, z: 0 }, { x: 5, z: 0 }), true);
 });
 
+test("you can see through a jaali", () => {
+  assert.equal(lineOfSight({ x: 4.3, z: -1.2 }, { x: 4.5, z: -5.0 }), true);
+  assert.equal(lineOfSight({ x: 0, z: -1.2 }, { x: 0, z: -5.0 }), false, "but not through the dining room's north wall");
+});
+
 test("pit and doorway queries", () => {
   assert.ok(inPit(5, 0));
   assert.ok(!inPit(3.4, 0));
