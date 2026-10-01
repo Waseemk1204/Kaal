@@ -72,6 +72,11 @@ export const LADDER = { x: 3.95, z: 1.15 };
 // steps over anything below knee height).
 export const FURNITURE = [
   { id: "table", x1: -0.95, x2: 0.95, z1: -0.5, z2: 0.5, h: 0.76, room: "dining" },
+  // Chairs (Kaal steps over them; you don't).
+  { id: "chair-munna", x1: -0.67, x2: -0.23, z1: 0.8, z2: 1.2, h: 0.46, room: "dining" },
+  { id: "chair-mummy", x1: 0.23, x2: 0.67, z1: 0.8, z2: 1.2, h: 0.46, room: "dining" },
+  { id: "chair-papa", x1: 0.23, x2: 0.67, z1: -1.2, z2: -0.8, h: 0.46, room: "dining" },
+  { id: "chair-dadi", x1: -0.67, x2: -0.23, z1: -1.2, z2: -0.8, h: 0.46, room: "dining" },
   { id: "sideboard", x1: -0.85, x2: 0.85, z1: -2.4, z2: -1.95, h: 0.9, room: "dining" },
   { id: "tv", x1: 1.85, x2: 2.75, z1: 1.85, z2: 2.4, h: 0.75, room: "dining" },
   { id: "rubble-dining", x1: 1.3, x2: 2.6, z1: 0.9, z2: 1.85, h: 0.5, room: "dining", era: "ab" },

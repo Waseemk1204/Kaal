@@ -250,6 +250,10 @@ export class Game {
     this.kaal?.update?.(dt);
     this.director?.update?.(dt);
     if (playing) this.updateInteraction(dt);
+    else {
+      this.ui.setPrompt("");
+      this.ui.setHold(0);
+    }
 
     // The camera follows the body.
     const p = this.player;
@@ -311,7 +315,8 @@ export class Game {
       if (d > (it.range ?? PLAYER.reach)) continue;
       to.normalize();
       const dot = to.dot(dir);
-      const need = it.wide ?? 0.9;
+      // Wider when close: things at arm's length are easy to reach for.
+      const need = (it.wide ?? 0.9) - 0.12 * Math.max(0, 1 - d / 1.2);
       if (dot < need) continue;
       if (it.tabOnly && lightAmount(lights, it.pos) < 0.5) continue;
       if (it.abOnly && lightAmount(lights, it.pos) > 0.5) continue;

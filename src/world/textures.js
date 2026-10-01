@@ -91,27 +91,35 @@ function tabWall(ctx, w, h) {
 function abWall(ctx, w, h) {
   ctx.fillStyle = "#6b6e64";
   ctx.fillRect(0, 0, w, h);
-  // Exposed brick where the plaster has fallen.
-  for (let i = 0; i < 7; i += 1) {
+  // Exposed brick where the plaster has fallen: ragged patches.
+  for (let i = 0; i < 5; i += 1) {
     const bx = rand() * w;
     const by = rand() * h;
-    const bw = 60 + rand() * 140;
-    const bh = 40 + rand() * 120;
+    const R = 40 + rand() * 70;
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(bx, by, bw / 2, bh / 2, rand() * 3, 0, Math.PI * 2);
+    const ph = rand() * 6;
+    for (let k = 0; k <= 32; k += 1) {
+      const a = (k / 32) * Math.PI * 2;
+      const r = R * (0.72 + 0.2 * Math.sin(a * 3 + ph) + 0.08 * Math.sin(a * 7 + ph * 2) + rand() * 0.06);
+      const px = bx + Math.cos(a) * r * 1.3;
+      const py = by + Math.sin(a) * r * 0.8;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
     ctx.clip();
-    ctx.fillStyle = "#5a3328";
-    ctx.fillRect(bx - bw, by - bh, bw * 2, bh * 2);
-    ctx.strokeStyle = "#3a2a24";
+    ctx.fillStyle = "#4a3028";
+    ctx.fillRect(bx - R * 2, by - R * 2, R * 4, R * 4);
+    ctx.strokeStyle = "#2a1e1a";
     ctx.lineWidth = 2;
-    for (let y = by - bh; y < by + bh; y += 14) {
+    for (let y = by - R * 2; y < by + R * 2; y += 14) {
       ctx.beginPath();
-      ctx.moveTo(bx - bw, y);
-      ctx.lineTo(bx + bw, y);
+      ctx.moveTo(bx - R * 2, y);
+      ctx.lineTo(bx + R * 2, y);
       ctx.stroke();
       const off = (Math.floor(y / 14) % 2) * 18;
-      for (let x = bx - bw + off; x < bx + bw; x += 36) {
+      for (let x = bx - R * 2 + off; x < bx + R * 2; x += 36) {
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y + 14);

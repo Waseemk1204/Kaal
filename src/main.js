@@ -9,6 +9,7 @@ import { AudioEngine } from "./audio/engine.js";
 import { Sounds } from "./audio/sounds.js";
 import { Director } from "./director.js";
 import { Kaal } from "./kaal/kaal.js";
+import { World } from "./world/world.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -47,6 +48,7 @@ const look = new Look({
 });
 const game = new Game({ renderer, canvas, audio, sounds, input, look, ui });
 game.kaal = new Kaal(game);
+game.world = new World(game);
 const director = new Director(game);
 game.director = director;
 window.__kaal = { game, director, THREE };

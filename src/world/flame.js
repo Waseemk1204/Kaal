@@ -68,7 +68,7 @@ export class LightPool {
 
 // kind: match | candle | diya
 const KINDS = {
-  match: { size: 0.011, intensity: 5, color: 0xffa24c, glow: 0.09 },
+  match: { size: 0.011, intensity: 3.4, color: 0xffa24c, glow: 0.09 },
   candle: { size: 0.014, intensity: 7, color: 0xffa858, glow: 0.12 },
   diya: { size: 0.02, intensity: 30, color: 0xffb060, glow: 0.2 },
 };
