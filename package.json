@@ -1,0 +1,15 @@
+{
+  "name": "kaal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "KAAL: a first-person atmospheric horror game. A family dinner, a power cut, and a match that brings back 1987 for as long as it burns.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "for f in server.mjs shared/*.js src/*.js src/*/*.js test/*.mjs; do node --check \"$f\" || exit 1; done"
+  }
+}

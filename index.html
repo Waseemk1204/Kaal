@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="KAAL — a first-person atmospheric horror game. A family dinner in 1987, a power cut, and a match that brings back the past for as long as it burns. In the dark, something very tall is walking toward you." />
+    <title>Kaal</title>
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="KAAL" />
+    <meta property="og:description" content="As long as the lamp burns, Kaal waits." />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game" aria-label="Game view"></canvas>
+
+      <!-- In-game overlays: no HUD, only what the moment needs. -->
+      <div id="hud" class="hud hidden">
+        <div id="crosshair" class="crosshair"></div>
+        <div id="prompt" class="prompt"></div>
+        <div id="hold" class="hold"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" /></svg></div>
+        <div id="matches" class="matches"></div>
+        <div id="subtitle" class="subtitle"></div>
+        <div id="note" class="note"></div>
+      </div>
+
+      <section id="page" class="page hidden" aria-live="polite">
+        <div class="paper"><p id="page-text"></p></div>
+        <p class="page-hint">Press any key</p>
+      </section>
+
+      <section id="card" class="card hidden">
+        <h2 id="card-title"></h2>
+        <p id="card-sub"></p>
+        <div id="card-actions" class="card-actions"></div>
+      </section>
+
+      <section id="title" class="screen title">
+        <canvas id="title-flame" class="title-flame" width="200" height="300" aria-hidden="true"></canvas>
+        <div class="title-body">
+          <h1>KAAL</h1>
+          <p class="tagline">As long as the lamp burns, Kaal waits.</p>
+          <nav class="menu">
+            <button id="btn-start" class="btn" type="button">Begin</button>
+            <button id="btn-continue" class="btn hidden" type="button">Continue</button>
+            <button id="btn-settings" class="btn ghost" type="button">Settings</button>
+          </nav>
+          <p class="warn">Contains gore, death and loss. Best with headphones, in the dark.</p>
+        </div>
+      </section>
+
+      <section id="brightness" class="screen brightness hidden">
+        <div class="brightness-body">
+          <div class="bright-sample">
+            <svg viewBox="0 0 100 100" aria-hidden="true"><path id="bright-diya" d="M20 62 Q50 84 80 62 L74 58 Q50 72 26 58 Z M49 56 Q44 44 50 30 Q56 44 51 56 Z" /></svg>
+          </div>
+          <p>Turn the brightness down until the lamp is <em>barely</em> visible.</p>
+          <input id="bright-range" type="range" min="0.6" max="1.8" step="0.02" value="1" aria-label="Brightness" />
+          <button id="btn-bright-ok" class="btn" type="button">That's right</button>
+        </div>
+      </section>
+
+      <section id="settings" class="screen settings hidden">
+        <div class="settings-body">
+          <h2>Settings</h2>
+          <label>Mouse sensitivity <input id="set-sens" type="range" min="0.0008" max="0.005" step="0.0001" /></label>
+          <label>Volume <input id="set-vol" type="range" min="0" max="1" step="0.01" /></label>
+          <label>Brightness <input id="set-bright" type="range" min="0.6" max="1.8" step="0.02" /></label>
+          <label>Subtitle size
+            <select id="set-subs">
+              <option value="1">Normal</option>
+              <option value="1.25">Large</option>
+              <option value="1.5">Larger</option>
+            </select>
+          </label>
+          <button id="btn-settings-back" class="btn" type="button">Back</button>
+        </div>
+      </section>
+
+      <section id="pause" class="screen pause hidden">
+        <div class="pause-body">
+          <h2>Paused</h2>
+          <nav class="menu">
+            <button id="btn-resume" class="btn" type="button">Resume</button>
+            <button id="btn-checkpoint" class="btn ghost" type="button">Restart from checkpoint</button>
+            <button id="btn-pause-settings" class="btn ghost" type="button">Settings</button>
+            <button id="btn-quit" class="btn ghost" type="button">Quit to title</button>
+          </nav>
+          <dl class="keys">
+            <dt>WASD</dt><dd>walk</dd>
+            <dt>Mouse</dt><dd>look</dd>
+            <dt>F / right click</dt><dd>strike a match</dd>
+            <dt>E</dt><dd>use, pick up (hold for longer tasks)</dd>
+            <dt>Q</dt><dd>set down a candle</dd>
+            <dt>Shift</dt><dd>run (blows out a match)</dd>
+          </dl>
+        </div>
+      </section>
+
+      <div id="fade" class="fade"></div>
+    </main>
+    <script type="importmap">
+      { "imports": { "three": "./assets/vendor/three.module.min.js" } }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
