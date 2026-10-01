@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
+  "builds": [{ "src": "**/*", "use": "@vercel/static" }],
   "headers": [
     {
       "source": "/assets/vendor/(.*)",
