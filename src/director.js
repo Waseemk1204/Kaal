@@ -479,7 +479,7 @@ export class Director {
       if (p.model) p.model.visible = !p.picked;
     }
     for (const k of ["mummy", "dadi", "papa"]) if (c.restored[k]) this.restore(k, null, { quiet: true });
-    g.inv.ab = c.inv.ab + SUPPLY.deathBonusMatches;
+    g.inv.ab = Math.max(c.inv.ab + SUPPLY.deathBonusMatches, 6); // never unwinnable
     g.inv.tab = c.inv.tab;
     g.inv.tabFresh = c.inv.tabFresh;
     g.inv.candles = c.inv.candles;

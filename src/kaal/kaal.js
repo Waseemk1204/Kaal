@@ -7,6 +7,7 @@ import { KaalBrain, inView } from "../../shared/kaal-brain.js";
 import { KaalView } from "./motion.js";
 import { Marks } from "./marks.js";
 import { KaalSounds } from "../audio/kaal.js";
+import { Dust } from "../fx/dust.js";
 import { PRESENCE, STAGE } from "../../shared/rules.js";
 
 export class Kaal {
@@ -16,6 +17,7 @@ export class Kaal {
     this.view = new KaalView(game.scene);
     this.marks = new Marks(game.scene);
     this.audio = new KaalSounds(game.audio);
+    this.dust = new Dust(game.scene);
     this.duck = 1;
     this.near = 0; // 0 far … 1 on top of you
     this.dist = 99;
@@ -58,7 +60,8 @@ export class Kaal {
     const s = this.brain.state;
     const p = g.player;
     let events = [];
-    if (this.enabled && g.state === "play") {
+    // (It waits while you read: the page covers the screen.)
+    if (this.enabled && g.state === "play" && !g.ui.reading) {
       events = this.brain.tick(dt, {
         player: { x: p.x, z: p.z, y: p.y, inTank: p.inTank },
         lights: g.warmLights(),
@@ -100,8 +103,15 @@ export class Kaal {
     this.audio.setPosition(s.present ? s.x : 0, s.present ? hy : 2, s.present ? s.z : -9);
     this.audio.update(dt, this.tickLevel * (this.silenced ? 0 : 1));
 
+    // Dust: a little always, thick near it.
+    this.dust.update(dt, p, 0.12 + this.near * 0.88);
+
     // On you: tremble, heart, breath, grain. (Cutscenes take these over.)
-    if (this.presence === false) return;
+    if (this.presence === false) {
+      g.sounds.dread(0, 0);
+      return;
+    }
+    g.sounds.dread([0, 0.4, 0.7, 1][g.stage] ?? 0, this.near);
     const close = ramp(PRESENCE.close, 0.8);
     g.hands.tremble = 0.15 + this.near * 0.9;
     g.sounds.body(dt, { heart: close > 0 ? 1.0 + close * 1.4 : 0, breath: this.near > 0.2 ? 0.25 + this.near * 0.5 : 0 });

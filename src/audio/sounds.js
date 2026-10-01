@@ -35,8 +35,48 @@ export class Sounds {
     // A dripping tap in the kitchen.
     this.dripPan = e.panner(6.5, 1.0, -2.2, { ref: 0.8, rolloff: 1.6 });
     this.dripPan.connect(e.amb);
-    this.next = { cricket: 0.5, dog: 6, creak: 3, drip: 1, clink: 2, tvWord: 1 };
+    this.next = { cricket: 0.5, dog: 6, creak: 3, drip: 1, clink: 2, tvWord: 1, settle: 20, gust: 10 };
     this.crickets = true;
+    // The dread: a low drone of three detuned saws under a slow filter. It
+    // rises with each stage and with Kaal's nearness. Never sudden.
+    const droneOut = ctx.createGain();
+    droneOut.gain.value = 0;
+    this.droneFilter = ctx.createBiquadFilter();
+    this.droneFilter.type = "lowpass";
+    this.droneFilter.frequency.value = 140;
+    this.droneFilter.Q.value = 3;
+    this.droneFilter.connect(droneOut);
+    droneOut.connect(e.dry);
+    this.droneGain = droneOut;
+    for (const [f, type] of [[55, "sawtooth"], [55.35, "sawtooth"], [82.6, "triangle"], [27.5, "sine"]]) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.value = type === "sine" ? 0.6 : 0.25;
+      o.connect(g);
+      g.connect(this.droneFilter);
+      o.start();
+    }
+    // A thin, high whine for when it's right beside you.
+    this.whine = ctx.createOscillator();
+    this.whine.type = "sine";
+    this.whine.frequency.value = 2200;
+    this.whineGain = ctx.createGain();
+    this.whineGain.gain.value = 0;
+    this.whine.connect(this.whineGain);
+    this.whineGain.connect(e.dry);
+    this.whine.start();
+  }
+
+  // level 0..1 (stage), near 0..1 (Kaal's closeness).
+  dread(level, near) {
+    if (!this.started || !this.e.ctx) return;
+    const g = Math.min(0.22, level * 0.07 + near * 0.12);
+    this.e.fade(this.droneGain.gain, g, 2.5);
+    this.droneFilter.frequency.value = 110 + near * 260 + Math.sin(this.time * 0.17) * 20;
+    this.e.fade(this.whineGain.gain, near > 0.7 ? (near - 0.7) * 0.03 : 0, 1.5);
+    this.whine.frequency.value = 2200 + Math.sin(this.time * 0.9) * 40;
   }
 
   // light: how deep the listener is in 1987 (0..1). duck: 1 normal, 0 silent.
@@ -64,6 +104,24 @@ export class Sounds {
     if (due("creak", 5, 16)) this.creak();
     if (due("drip", 1.1, 1.6)) this.drip();
     if (light > 0.3 && due("clink", 2, 6)) this.clink();
+    if (due("settle", 25, 60)) this.settle();
+    if (due("gust", 12, 30)) this.gust();
+  }
+
+  // The house settling: a soft, low knock somewhere in the walls.
+  settle() {
+    const e = this.e;
+    const p = e.panner((Math.random() - 0.5) * 12, 2.5, (Math.random() - 0.5) * 4, { ref: 2, rolloff: 0.8 });
+    p.connect(e.amb);
+    e.tone({ freq: 60 + Math.random() * 30, type: "sine", duration: 0.25, gain: 0.06, attack: 0.03, out: p });
+    e.burst({ duration: 0.12, gain: 0.03, freq: 400, q: 1, attack: 0.02, out: p });
+  }
+
+  // Wind finding a gap in the roof: a long, rising whistle.
+  gust() {
+    const e = this.e;
+    const f = 500 + Math.random() * 400;
+    e.burst({ duration: 3 + Math.random() * 2, gain: 0.025, freq: f, q: 14, attack: 1.2, slideTo: f * 1.4, out: e.amb });
   }
 
   cricket() {
