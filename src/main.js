@@ -95,6 +95,16 @@ $("#btn-bright-ok").addEventListener("click", () => {
   begin();
 });
 
+// A previous session's checkpoint: offer to continue it.
+if (Director.saved()) $("#btn-continue").classList.remove("hidden");
+$("#btn-continue").addEventListener("click", () => {
+  audio.unlock();
+  sounds.start();
+  showScreen(null);
+  director.resume(Director.saved());
+  look.lock();
+});
+
 $("#btn-settings").addEventListener("click", () => openSettings("#title"));
 $("#btn-pause-settings").addEventListener("click", () => openSettings("#pause"));
 function openSettings(back) {

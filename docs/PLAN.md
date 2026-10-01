@@ -247,6 +247,7 @@ sighting. Never cut: the reveal shader, Kaal's freeze-in-light, the death.
 
 Still to do:
 - **Blind playtests (3+ people), then tuning** every number in `shared/rules.js`: match counts, burn times, Kaal speeds, freshness.
-- **Art pass on the family**: they read clearly but look like mannequins. Better hands, clothes folds, hair.
-- **Kaal's doorway fold**: worth a dedicated look in motion; it's only been checked in stills.
-- **Sound**: a low music drone for stage 3, and more variety in the house's creaks.
+- ~~Art pass on the family~~: done (cloth, drape, hair, hands, jewellery).
+- ~~Kaal's doorway fold~~: checked in motion.
+- ~~Sound~~: dread drone by stage and nearness; house settling, gusts. Dust near Kaal.
+- ~~Continue~~: checkpoints saved in the browser.

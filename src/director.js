@@ -22,6 +22,8 @@ const PAGES = {
   3: "They are tearing the house down in the morning. The man from the Corporation said I could take whatever I wanted.\n\nI didn't want anything. I wanted to sit at that table one more time.\n\nThe power's been cut for years. I brought matches.",
 };
 
+const SAVE_KEY = "kaal.save";
+
 const NAMES = { bangles: "Mummy's bangles", spectacles: "Dadi's spectacles", thali: "Dadi's pooja thali", watch: "Papa's watch" };
 
 export class Director {
@@ -459,9 +461,37 @@ export class Director {
       flags: { ...this.flags },
       awake: g.kaal.brain.s.awake,
     };
+    // Remember it across sessions (not in dev runs).
+    if (!this.dev) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(this.checkpoint));
+      } catch {}
+    }
   }
 
-  restartCheckpoint() {
+  static saved() {
+    try {
+      return JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+    } catch {
+      return null;
+    }
+  }
+
+  static forget() {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {}
+  }
+
+  // Pick up where a previous session left off.
+  resume(save) {
+    this.build();
+    this.checkpoint = save;
+    this.deaths = 0;
+    this.restartCheckpoint({ bonus: false });
+  }
+
+  restartCheckpoint({ bonus = true } = {}) {
     const g = this.g;
     const c = this.checkpoint;
     g.ui.hideCard();
@@ -479,7 +509,7 @@ export class Director {
       if (p.model) p.model.visible = !p.picked;
     }
     for (const k of ["mummy", "dadi", "papa"]) if (c.restored[k]) this.restore(k, null, { quiet: true });
-    g.inv.ab = Math.max(c.inv.ab + SUPPLY.deathBonusMatches, 6); // never unwinnable
+    g.inv.ab = bonus ? Math.max(c.inv.ab + SUPPLY.deathBonusMatches, 6) : c.inv.ab; // never unwinnable
     g.inv.tab = c.inv.tab;
     g.inv.tabFresh = c.inv.tabFresh;
     g.inv.candles = c.inv.candles;

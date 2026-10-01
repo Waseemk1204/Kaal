@@ -248,10 +248,14 @@ tops get gouged where it folds through. The player can read its routes.
   flame), so the match throws Kaal's long shadow up the wall.
 - **Post:** film grain, vignette, slight chromatic aberration at the edges,
   desaturation that deepens near Kaal and during the death.
-- **Characters:** stylised, low-detail bodies made from primitives (like
-  Jugaad Escape's actors), recognised by silhouette, colour and props. Heads
-  are smooth ovals with hair — **no eyes, nose, mouth, eyebrows, moustache or
+- **Characters:** stylised bodies with real cloth and drape, recognised by
+  silhouette, clothes, hair and objects: Mummy's maroon saree with a zari
+  border, pleats and pallu, her parting with sindoor, a plait with a red
+  tassel, bangles, mangalsutra; Papa's cotton shirt with pocket pens, belt,
+  watch, glasses pushed up; Dadi's white saree over her head, wool shawl.
+  Heads are smooth with hair — **no eyes, nose, mouth, eyebrows, moustache or
   ears drawn**. Spectacles on Dadi's blank face are fine — they're an object.
+  Restored family members are grey ash figures in the dark.
 - **Kaal** is pure black, unlit, so it reads as a hole in the frame. Ash particles on
   its shoulders. Never fully lit from the front; the camera never lingers on
   it in bright light except while it's held.
@@ -283,4 +287,6 @@ files. (Recorded voice lines are a stretch goal; subtitles carry the dialogue.)
   barely visible."
 - **Settings:** mouse sensitivity, volume, brightness, subtitles size.
 - **Pause:** resume / restart checkpoint / title.
+- **Continue:** each checkpoint is saved in the browser; the title offers
+  Continue. Finishing an ending clears it.
 - **Death card** and **ending card**: see STORY §7.

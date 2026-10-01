@@ -393,6 +393,7 @@ export class Ending {
   card() {
     const g = this.g;
     this.carded = true;
+    this.d.constructor.forget(); // it's over
     if (this.eng) this.eng.gn.gain.setTargetAtTime(0, g.sounds.e.ctx.currentTime, 0.8);
     // The photograph from the rubble.
     const c = document.createElement("canvas");
