@@ -130,6 +130,7 @@ export function buildHand({ side = 1, curl = [0.5, 1.1, 1.2, 1.25], thumb = 0.4,
   tBase.add(tJoint);
   hand.add(tBase);
   hand.userData.thumbTip = tJoint;
+  hand.userData.thumbBase = tBase;
   // Wrist, forearm and the sleeve going down out of view.
   const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.026, 0.2, 3, 10), skin);
   arm.scale.z = 0.75;
@@ -155,27 +156,29 @@ const HEAD = new THREE.MeshStandardMaterial({ color: 0x6a1a14, roughness: 0.7 })
 export class Hands {
   constructor(camera) {
     this.camera = camera;
-    // Left hand: palm turned in toward the middle of the view, fingers
-    // leaning forward, index and thumb pinching the match upright.
+    // Left hand: a real pinch. The index finger curls in a soft C, the thumb
+    // is aimed so its tip meets the index fingertip, the other fingers tuck
+    // into the palm, and the match sits in the pinch, upright.
     this.left = new THREE.Group();
-    this.leftHand = buildHand({ side: 1, curl: [0.75, 1.25, 1.35, 1.4], thumb: 0.35 });
+    this.leftHand = buildHand({ side: 1, curl: [0, 1.25, 1.45, 1.55], thumb: 0.15 });
+    this.pinch = this.posePinch(this.leftHand);
     this.leftHand.rotation.order = "XYZ";
-    this.leftHand.rotation.set(-0.75, Math.PI / 2, 0.15);
+    this.leftHand.rotation.set(-0.55, Math.PI / 2 - 0.25, 0.1);
     this.left.add(this.leftHand);
     this.match = new THREE.Group();
-    const stick = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.052, 0.0035), STICK);
+    const stick = new THREE.Mesh(new THREE.BoxGeometry(0.0032, 0.052, 0.0032), STICK);
     stick.position.y = 0.026;
-    this.char = new THREE.Mesh(new THREE.BoxGeometry(0.0039, 1, 0.0039), CHAR);
-    this.head = new THREE.Mesh(new THREE.SphereGeometry(0.0036, 8, 6), HEAD);
+    this.char = new THREE.Mesh(new THREE.BoxGeometry(0.0036, 1, 0.0036), CHAR);
+    this.head = new THREE.Mesh(new THREE.SphereGeometry(0.0034, 8, 6), HEAD);
     this.head.scale.y = 1.4;
     this.head.position.y = 0.052;
     this.match.add(stick, this.char, this.head);
-    // Held at the pinch, in camera space (kept upright whatever the hand does).
-    this.match.position.set(0.045, 0.06, -0.035);
+    this.match.rotation.z = -0.12; // a natural slight lean
     this.left.add(this.match);
     this.flameAnchor = new THREE.Object3D();
     this.flameAnchor.position.y = 0.056;
     this.match.add(this.flameAnchor);
+    this.pinchWorld = new THREE.Vector3();
     camera.add(this.left);
 
     // Right hand: carrying, palm up.
@@ -200,6 +203,29 @@ export class Hands {
     this.layout();
   }
 
+  // Bend the index into a soft C and aim the thumb so the two tips meet.
+  // Returns the pinch point in the hand's own space.
+  posePinch(hand) {
+    const idx = hand.userData.fingers[0];
+    idx[0].rotation.x = 0.95;
+    idx[1].rotation.x = 1.0;
+    idx[2].rotation.x = 0.55;
+    hand.updateMatrixWorld(true);
+    const tip = new THREE.Vector3(0, idx[2].userData.len * 0.85, 0).applyMatrix4(idx[2].matrixWorld);
+    const tBase = hand.userData.thumbBase;
+    const tJoint = hand.userData.thumbTip;
+    // Thumb: first segment toward the fingertip, the tip bent a little in.
+    tJoint.rotation.set(0.4, 0, 0);
+    const dir = tip.clone().sub(tBase.position);
+    const dist = dir.length();
+    tBase.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    tBase.scale.setScalar(Math.min(1.08, Math.max(0.85, dist / 0.072)));
+    hand.updateMatrixWorld(true);
+    // Where they meet: the pad of the index tip, nudged toward the thumb.
+    const thumbTip = new THREE.Vector3(0, 0.03, 0).applyMatrix4(tJoint.matrixWorld);
+    return tip.clone().lerp(thumbTip, 0.4);
+  }
+
   layout() {
     const t = this.time;
     const shake = this.tremble * 0.004;
@@ -210,6 +236,11 @@ export class Hands {
     if (this.strikeT >= 0 && this.strikeT < 0.35) flick = Math.sin((this.strikeT / 0.35) * Math.PI);
     this.left.position.set(-0.2 + flick * 0.05 + sx, -0.4 + lu * 0.17 + sy, -0.36);
     this.left.rotation.set(0, 0, flick * -0.35);
+    // The match sits in the pinch: the fingers hold it a third of the way up.
+    this.leftHand.updateMatrix();
+    this.pinchWorld.copy(this.pinch).applyMatrix4(this.leftHand.matrix);
+    this.match.position.copy(this.pinchWorld);
+    this.match.position.y -= 0.017;
     const ru = easeOut(this.rightUp);
     this.right.position.set(0.16 - sx, -0.38 + ru * 0.17 + sy, -0.36);
     this.left.visible = this.leftUp > 0.01;
