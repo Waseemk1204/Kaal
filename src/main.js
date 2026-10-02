@@ -15,7 +15,7 @@ const $ = (s) => document.querySelector(s);
 
 // ---------------------------------------------------------------- settings
 const SETTINGS_KEY = "kaal.settings";
-const settings = { sens: 0.0022, vol: 0.9, bright: 1, subs: 1, calibrated: false };
+const settings = { sens: 0.0022, vol: 0.9, bright: 1, subs: 1, calibrated: false, quality: "high", flash: false };
 try {
   Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"));
 } catch {}
@@ -58,6 +58,8 @@ function applySettings() {
   audio.setVolume(settings.vol);
   game.brightness = settings.bright;
   document.documentElement.style.setProperty("--sub-scale", settings.subs);
+  game.setQuality(settings.quality);
+  game.reduceFlashing = !!settings.flash;
 }
 applySettings();
 
@@ -113,6 +115,8 @@ function openSettings(back) {
   $("#set-vol").value = settings.vol;
   $("#set-bright").value = settings.bright;
   $("#set-subs").value = String(settings.subs);
+  $("#set-quality").value = settings.quality;
+  $("#set-flash").checked = !!settings.flash;
   showScreen("#settings");
 }
 for (const [id, key] of [
@@ -127,6 +131,16 @@ for (const [id, key] of [
     saveSettings();
   });
 }
+$("#set-quality").addEventListener("input", (e) => {
+  settings.quality = e.target.value;
+  applySettings();
+  saveSettings();
+});
+$("#set-flash").addEventListener("change", (e) => {
+  settings.flash = e.target.checked;
+  applySettings();
+  saveSettings();
+});
 $("#btn-settings-back").addEventListener("click", () => showScreen(settingsReturn));
 
 function begin() {

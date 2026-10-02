@@ -172,7 +172,12 @@ export class Post {
     const r = this.renderer;
     r.setRenderTarget(this.target);
     r.render(scene, camera);
-    // Bloom.
+    // Bloom (skipped on low quality).
+    if (f.bloom <= 0) {
+      r.setRenderTarget(null);
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
     this.quad.material = this.brightMat;
     r.setRenderTarget(this.bloomA);
     r.render(this.scene, this.camera);

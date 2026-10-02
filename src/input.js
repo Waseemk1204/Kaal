@@ -74,14 +74,23 @@ export class Look {
     this.sensitivity = 0.0022;
     this.enabled = false;
 
+    // Some embeds (an iframe on a jam page) refuse pointer lock. Then you
+    // look by dragging with a mouse button held down instead.
+    this.lockRefused = false;
+    this.dragging = false;
     target.addEventListener("mousedown", () => {
-      if (this.enabled && !this.locked) this.lock();
+      if (!this.enabled) return;
+      this.dragging = true;
+      if (!this.locked && !this.lockRefused) this.lock();
     });
+    window.addEventListener("mouseup", () => (this.dragging = false));
     document.addEventListener("mousemove", (event) => {
-      if (!this.enabled || !this.locked) return;
+      if (!this.enabled) return;
+      if (!this.locked && !(this.lockRefused && this.dragging)) return;
       this.onLook(event.movementX * this.sensitivity, event.movementY * this.sensitivity);
     });
     document.addEventListener("pointerlockchange", () => this.onLockChange(this.locked));
+    document.addEventListener("pointerlockerror", () => (this.lockRefused = true));
   }
 
   get locked() {
@@ -89,7 +98,11 @@ export class Look {
   }
 
   lock() {
-    Promise.resolve(this.target.requestPointerLock?.()).catch(() => {});
+    if (!this.target.requestPointerLock) {
+      this.lockRefused = true;
+      return;
+    }
+    Promise.resolve(this.target.requestPointerLock()).catch(() => (this.lockRefused = true));
   }
 
   enable() {

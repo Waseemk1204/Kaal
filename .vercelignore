@@ -3,3 +3,4 @@ test/
 server.mjs
 docs/
 .claude/
+dist/

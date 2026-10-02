@@ -305,15 +305,16 @@ export class Prologue {
     let tube = 1;
     if (this.flicker > 0) {
       this.flicker -= dt;
-      const strobe = Math.sin(this.flicker * 60) > 0.2 ? 0.25 : 0;
-      tube = this.flicker > 0.12 ? strobe * 0.3 : 0.6;
+      // Reduce flashing: a soft dip instead of a strobe.
+      const strobe = g.reduceFlashing ? 0.12 : Math.sin(this.flicker * 60) > 0.2 ? 0.25 : 0;
+      tube = this.flicker > 0.12 ? strobe * (g.reduceFlashing ? 1 : 0.3) : 0.6;
       if (this.flicker <= 0.2 && this.pendingChange) {
         this.change(this.pendingChange);
         this.pendingChange = null;
       }
     } else if (this.phase === "fetch" || t > 40) {
       // An unhappy tube light, near the end.
-      tube = 0.75 + Math.sin(t * 37) * 0.08 + (Math.random() < 0.02 ? -0.5 : 0);
+      tube = g.reduceFlashing ? 0.72 : 0.75 + Math.sin(t * 37) * 0.08 + (Math.random() < 0.02 ? -0.5 : 0);
     }
     if (this.phase === "dinner" || this.phase === "fetch") {
       this.tubeLight.intensity = 7 * tube;

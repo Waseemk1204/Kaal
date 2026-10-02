@@ -68,10 +68,31 @@ export class Game {
     };
   }
 
+  // High: full resolution, bloom, shadows from the flame in your hand.
+  // Low: one pixel per pixel, no bloom, no flame shadows, smaller moon shadows.
+  setQuality(q) {
+    this.quality = q;
+    const low = q === "low";
+    this.post.fx.bloom = low ? 0 : 0.55;
+    this.post.lowQuality = low;
+    const flameLight = this.pool.lights[0];
+    if (flameLight.castShadow === low) {
+      flameLight.castShadow = !low;
+    }
+    const moon = this.moon.moon;
+    const size = low ? 1024 : 2048;
+    if (moon.shadow.mapSize.x !== size) {
+      moon.shadow.mapSize.set(size, size);
+      moon.shadow.map?.dispose();
+      moon.shadow.map = null;
+    }
+    this.onResize();
+  }
+
   onResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const ratio = Math.min(window.devicePixelRatio, 2);
+    const ratio = this.quality === "low" ? 1 : Math.min(window.devicePixelRatio, 2);
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h, false);
     this.post.setSize(w, h, ratio);

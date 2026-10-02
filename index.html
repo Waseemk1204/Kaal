@@ -51,7 +51,7 @@
             <button id="btn-continue" class="btn hidden" type="button">Continue</button>
             <button id="btn-settings" class="btn ghost" type="button">Settings</button>
           </nav>
-          <p class="warn">Contains gore, death and loss. Best with headphones, in the dark.</p>
+          <p class="warn">Contains gore, death and loss, and flickering lights (Settings → Reduce flashing). Best with headphones, in the dark.</p>
         </div>
       </section>
 
@@ -72,6 +72,13 @@
           <label>Mouse sensitivity <input id="set-sens" type="range" min="0.0008" max="0.005" step="0.0001" /></label>
           <label>Volume <input id="set-vol" type="range" min="0" max="1" step="0.01" /></label>
           <label>Brightness <input id="set-bright" type="range" min="0.6" max="1.8" step="0.02" /></label>
+          <label>Graphics
+            <select id="set-quality">
+              <option value="high">High</option>
+              <option value="low">Low (older laptops)</option>
+            </select>
+          </label>
+          <label class="check"><input id="set-flash" type="checkbox" /> Reduce flashing lights</label>
           <label>Subtitle size
             <select id="set-subs">
               <option value="1">Normal</option>
@@ -80,6 +87,11 @@
             </select>
           </label>
           <button id="btn-settings-back" class="btn" type="button">Back</button>
+          <p class="credits">
+            KAAL — made for BYOG 2026 (theme: Everything is Temporary).<br />
+            Built on <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT licence). Fonts: Cormorant Garamond and Inter (SIL Open Font Licence), via Google Fonts.<br />
+            All models, textures and sound are made in code for this game. Made with the help of an AI coding assistant.
+          </p>
         </div>
       </section>
 

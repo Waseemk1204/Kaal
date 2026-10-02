@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/*.test.mjs",
-    "check": "for f in server.mjs shared/*.js src/*.js src/*/*.js test/*.mjs; do node --check \"$f\" || exit 1; done"
+    "check": "for f in server.mjs shared/*.js src/*.js src/*/*.js test/*.mjs; do node --check \"$f\" || exit 1; done",
+    "package": "rm -rf dist && mkdir -p dist && zip -rq dist/kaal-web.zip index.html src shared assets -x '*.DS_Store' && echo dist/kaal-web.zip"
   }
 }
