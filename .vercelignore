@@ -1,6 +1,7 @@
 # Not part of the site
-test/
-server.mjs
-docs/
 .claude/
 dist/
+docs/
+press/
+server.mjs
+test/

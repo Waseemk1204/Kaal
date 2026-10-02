@@ -12,10 +12,11 @@ with the organisers in #byog on discord.gamedev.in.
   *Automatically start on page load* off (audio needs the click on Begin).
 - **Platforms:** Windows, macOS, Linux (it runs in any desktop browser: Chrome, Edge, Firefox).
 - **Genre:** Horror. **Tags:** horror, atmospheric, first-person, psychological-horror, short, 3D, India.
-- **Cover image:** 630 × 500. A good one is the moonlit dining room with Kaal at the edge of the light.
-- **Screenshots:** 3–5. Suggested shots: the 1987 dinner, a match burning back
-  1987 into the rotten house, Kaal through the kitchen jaali, the ash family at the
-  table, the last dinner.
+- **Cover image:** `press/cover-630x500.png` (the moonbeam and the match, title set in it).
+- **Screenshots:** from `press/`, in this order: `01-burn`, `02-ash-family`, `03-kaal`,
+  `04-sighting`, `05-dinner-1987`, `06-last-dinner` (`07-dinner-pov` is a spare).
+- **First thing in the description:** `press/match-burns-back.gif` (1.8 MB). It shows
+  the core idea in two seconds: strike a match, and 1987 burns back into the rotten room.
 - **Content disclosures (itch's own settings):** tick violence/blood; do not tick sexual content.
 
 ## Page text (paste this)
@@ -37,8 +38,11 @@ with the organisers in #byog on discord.gamedev.in.
 > A first-person horror game about how everything is temporary: the light, the
 > past, the people in it, and you. 15–25 minutes. Two endings.
 >
+> ![A match burns the past back in](match-burns-back.gif)
+>
 > **Controls:** WASD walk · mouse look · F or right-click strike a match · E use (hold for longer tasks) ·
-> Q set down a candle · G drop a burning match · Tab count your matches · Shift run (blows out a match) · Esc pause
+> Q set down a candle · G drop a burning match · Tab count your matches · Shift run (blows out a match) · Esc pause ·
+> Space (held) skips the opening if you've seen it
 >
 > **Content warning:** gore, death, loss and grief, and flickering lights.
 > *Settings → Reduce flashing lights* softens the flicker. Best with headphones, in the dark.
@@ -64,6 +68,8 @@ with the organisers in #byog on discord.gamedev.in.
       disqualification, but Kaal's code was written with an AI assistant, and the public
       repo's commits say so. Ask in #byog before submitting *(confirm)*.
 - [ ] itch.io project created with the settings above; zip uploaded and set to play in the browser.
+- [ ] **Three blind playtests** (see `docs/PLAYTEST.md`), and the F9 logs sent back for tuning.
+- [ ] **Voices recorded** (optional, big win; see `docs/VOICE.md`).
 - [ ] **Played once on the itch page on a Windows PC**, start to finish, in Chrome or Edge.
       Check that mouse look works inside the itch frame (if pointer lock is refused, drag to look).
 - [ ] Credits and content warnings on the page (above).

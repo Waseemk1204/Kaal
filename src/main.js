@@ -57,6 +57,13 @@ game.world = new World(game);
 const director = new Director(game);
 game.director = director;
 window.__kaal = { game, director, THREE };
+// Dev: grab the current frame (render, then read the canvas in the same task).
+window.__kaal.capture = async (name) => {
+  game.render();
+  const url = canvas.toDataURL("image/png");
+  await fetch(`/__capture?name=${encodeURIComponent(name)}`, { method: "POST", body: url });
+  return name;
+};
 
 function applySettings() {
   look.sensitivity = settings.sens;
