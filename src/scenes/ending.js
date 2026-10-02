@@ -93,11 +93,11 @@ export class Ending {
       p.head.rotation.y = -0.2 * talking;
     };
     this.lines = [
-      { at: 4, who: "MUMMY", text: "What took you so long? The food's gone cold.", time: 3.6 },
-      { at: 8.4, who: "PAPA", text: "Quarter to ten.", time: 2.6 },
+      { at: 4, who: "MUMMY", text: "What took you so long? The food's gone cold.", time: 3.6, id: "mummy-late" },
+      { at: 8.4, who: "PAPA", text: "Quarter to ten.", time: 2.6, id: "papa-quarter" },
       { at: 11.2, text: "<em>The second hand moves. 9:48.</em>", time: 2.8 },
       { at: 15.6, text: "<em>Your hand. Spotted, thin-skinned, a wedding ring worn thin. Seventy years old.</em>", time: 2.6 },
-      { at: 18.4, who: "DADI", text: "Look how grown you are, Munna.", time: 3.6 },
+      { at: 18.4, who: "DADI", text: "Look how grown you are, Munna.", time: 3.6, id: "dadi-grown" },
       { at: 22.5, text: "<em>In the doorway, Kaal waits.</em>", time: 3.4 },
     ];
   }
@@ -115,6 +115,7 @@ export class Ending {
       if (!l.done && t >= l.at) {
         l.done = true;
         g.ui.say({ who: l.who, text: l.text, time: l.time });
+        if (l.id) g.voice?.play(l.id);
       }
     }
 
@@ -232,6 +233,8 @@ export class Ending {
     if (this.choice) return;
     const g = this.g;
     this.choice = choice;
+    g.log?.log("ending", { choice });
+    g.log?.log("act", { name: `end-${choice}` });
     this.phase = "taking";
     this.takeAt = this.t;
     g.ui.setPrompt("");

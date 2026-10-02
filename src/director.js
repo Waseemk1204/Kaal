@@ -158,7 +158,7 @@ export class Director {
     g.addInteractable({
       pos: diyaPos,
       label: () => (!lit() ? "Too dark to pour. You need light." : "Pour oil into the diya"),
-      hold: HOLD.pour,
+      hold: () => HOLD.pour * (1 + g.kaal.near * 0.6), // shaking hands
       holdCan: lit,
       can: () => this.has("thali") && !this.diyaState.oil,
       use: () => {
@@ -182,7 +182,7 @@ export class Director {
     g.addInteractable({
       pos: diyaPos,
       label: () => (this.restored.mummy && this.restored.dadi && this.restored.papa ? (g.matchLit ? "Light the diya" : "Strike a match first") : "Not yet. Their places are still empty."),
-      hold: HOLD.light,
+      hold: () => HOLD.light * (1 + g.kaal.near * 0.6),
       holdCan: () => g.matchLit && this.restored.mummy && this.restored.dadi && this.restored.papa,
       can: () => this.diyaState.wick && !g.diya,
       use: () => this.lightDiya(),
@@ -245,6 +245,7 @@ export class Director {
   take(id, fresh) {
     this.progress();
     const g = this.g;
+    g.log?.log("take", { id });
     g.inv.items.set(id, { fresh, total: fresh });
     this.hold(id);
     g.ui.note(NAMES[id], 2);
@@ -274,6 +275,7 @@ export class Director {
   // Something from 1987 has gone to pieces in your hand.
   crumble(id) {
     const g = this.g;
+    g.log?.log("crumble", { id });
     this.drop(id);
     const p = this.pickups.find((q) => q.id === id);
     if (p) {
@@ -291,6 +293,7 @@ export class Director {
 
   read(n) {
     this.progress();
+    this.g.log?.log("page", { n });
     this.g.ui.page(PAGES[n]);
     this.flags[`page${n}`] = true;
   }
@@ -322,6 +325,8 @@ export class Director {
       if (this.dev.die) setTimeout(() => this.die(), 500);
       return;
     }
+    g.log?.begin({ quality: g.quality, mode: "new" });
+    g.log?.log("act", { name: "prologue" });
     g.state = "scene";
     g.noStrike = true;
     g.kaal.tickBoost = 0;
@@ -372,6 +377,7 @@ export class Director {
 
   startPlay({ keepPlace = false } = {}) {
     const g = this.g;
+    g.log?.log("act", { name: "play" });
     if (!keepPlace) g.player.place(SPOTS.start.x, SPOTS.start.z, SPOTS.start.yaw);
     g.player.eye = 1.65;
     g.noStrike = false;
@@ -393,6 +399,7 @@ export class Director {
   restore(id, item, { quiet = false } = {}) {
     this.progress();
     const g = this.g;
+    if (!quiet) g.log?.log("act", { name: id });
     if (item) this.drop(item);
     this.restored[id] = true;
     const m = g.world.family.members[id];
@@ -436,16 +443,50 @@ export class Director {
     }
     if (stage === STAGE.COMING) {
       g.kaal.brain.wake();
+      // The siege: it comes through Dadi's doorway, unseen until it's there.
+      // (Nearest spot that's out of sight and far enough: never in view.)
+      if (!g.kaal.present || g.kaal.dist > 7)
+        this.pendingKaal = {
+          spots: [
+            [-4.6, -0.2],
+            [-5.9, 0.9],
+            [-6.9, -1.6],
+            [6.5, -1.0],
+            [0, -5.5],
+          ],
+          yaw: -Math.PI / 2,
+          mode: "walk",
+        };
       if (!quiet) {
+        this.chimes();
         g.sounds.e.tone({ freq: 60, type: "sine", duration: 3, gain: 0.15, attack: 1 });
-        setTimeout(() => g.ui.note("Light the diya.", 4), 1500);
+        setTimeout(() => g.ui.note("Light the diya.", 4), 2500);
       }
     }
+  }
+
+  // Every clock in the house strikes at once.
+  chimes() {
+    const e = this.g.sounds.e;
+    if (!e.ctx) return;
+    const spots = [[-6, -1.5], [-4.5, 1], [-6.8, 0.6], [1.4, -2.3], [-5.2, -0.3]];
+    spots.forEach(([x, z], i) => {
+      const p = e.panner(x, 2.2, z, { ref: 1.5, rolloff: 1 });
+      p.connect(e.sfx);
+      p.connect(e.reverbSend);
+      const base = [523, 494, 587, 440, 659][i];
+      for (let k = 0; k < 3; k += 1) {
+        const d = i * 0.13 + k * 1.1 + Math.random() * 0.05;
+        e.tone({ freq: base, type: "sine", duration: 2.8, gain: 0.07, delay: d, out: p });
+        e.tone({ freq: base * 2.76, type: "sine", duration: 1.2, gain: 0.02, delay: d, out: p });
+      }
+    });
   }
 
   // ------------------------------------------------------------- the diya
   lightDiya() {
     const g = this.g;
+    g.log?.log("act", { name: "diya" });
     g.diya = new Flame({ kind: "diya", radius: DIYA.radius, burn: DIYA.burn, pool: g.pool, parent: g.world.props.diyaWick });
     g.diyaRate = 0.0001; // it waits for the ending to let it burn
     g.sounds.e.burst({ duration: 1.2, gain: 0.3, freq: 500, q: 0.5, type: "lowpass", attack: 0.1 });
@@ -457,6 +498,7 @@ export class Director {
   die() {
     const g = this.g;
     if (this.scene) return;
+    g.log?.log("death", { stage: g.stage, room: g.player.room, matches: g.inv.ab + g.inv.tab, candles: g.inv.candles });
     this.deaths += 1;
     g.state = "scene";
     this.scene = new DeathScene(g, {
@@ -510,6 +552,7 @@ export class Director {
 
   // Pick up where a previous session left off.
   resume(save) {
+    this.g.log?.begin({ quality: this.g.quality, mode: "continue", from: save?.name });
     this.build();
     this.checkpoint = save;
     this.deaths = 0;
@@ -518,6 +561,7 @@ export class Director {
 
   restartCheckpoint({ bonus = true } = {}) {
     const g = this.g;
+    g.log?.log("retry", { from: this.checkpoint?.name });
     const c = this.checkpoint;
     g.ui.hideCard();
     g.ui.clearSubs();
@@ -595,13 +639,22 @@ export class Director {
     this.idle = (this.idle ?? 0) + dt;
     if (this.idle > 75 && !g.ui.reading) {
       this.idle = 0;
+      g.log?.log("hint", { text: this.hint().slice(0, 40) });
       this.memory(this.hint(), 6);
     }
 
     // Kaal goes where the story wants it, but only unseen and far away.
     if (this.pendingKaal) {
       const k = this.pendingKaal;
-      if (k.remove) {
+      if (k.spots) {
+        for (const [x, z] of k.spots) {
+          if (g.kaal.place(x, z, { yaw: k.yaw, mode: k.mode })) {
+            this.pendingKaal = null;
+            g.kaal.brain.wake();
+            break;
+          }
+        }
+      } else if (k.remove) {
         if (g.kaal.brain.remove({ view: g.kaal.playerView() })) this.pendingKaal = null;
       } else if (g.kaal.place(k.x, k.z, { yaw: k.yaw, mode: k.mode })) {
         this.pendingKaal = null;
@@ -620,6 +673,13 @@ export class Director {
     }
     if (this.flags.sighting === "standing" || this.flags.sighting === "closer") {
       if (g.kaal.seenBy()) {
+        if (!this.flags.seenOnce) {
+          // The first time you see it: the dogs go quiet; a low swell.
+          g.sounds.next.dog = (g.sounds.time ?? 0) + 120;
+          g.sounds.e.tone({ freq: 46, type: "sine", duration: 7, gain: 0.14, attack: 3, out: g.sounds.e.dry });
+          g.sounds.e.tone({ freq: 69, type: "sine", duration: 6, gain: 0.05, attack: 3.5, out: g.sounds.e.dry });
+          g.log?.log("sighting");
+        }
         this.flags.seenOnce = true;
         this.seenT = (this.seenT || 0) + dt;
       } else if (this.flags.seenOnce && this.flags.sighting === "standing") {
@@ -633,6 +693,21 @@ export class Director {
     if (room === "dadi" && g.stage >= STAGE.WAITING && !this.flags.dadiRoom) {
       this.flags.dadiRoom = true;
       this.memory("Dadi kept her spectacles folded in her Gita.", 5);
+    }
+
+    // In the finale, the ash family turn their heads to watch it come.
+    if (g.stage >= STAGE.COMING && g.kaal.present) {
+      const k = g.kaal.state;
+      for (const [id, m] of Object.entries(g.world.family.members)) {
+        if (!this.restored[id]) continue;
+        const r = m.root;
+        let a = Math.atan2(-(k.x - r.position.x), -(k.z - r.position.z)) - r.rotation.y;
+        while (a > Math.PI) a -= Math.PI * 2;
+        while (a < -Math.PI) a += Math.PI * 2;
+        const want = Math.max(-1.3, Math.min(1.3, a));
+        m.watchYaw = (m.watchYaw ?? 0) + (want - (m.watchYaw ?? 0)) * Math.min(1, dt * 0.8);
+        m.parts.head.rotation.y = m.watchYaw;
+      }
     }
 
     // Things from 1987 age in your hand in the dark.

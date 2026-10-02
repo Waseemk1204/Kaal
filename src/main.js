@@ -7,9 +7,11 @@ import { Input, Look } from "./input.js";
 import { UI } from "./ui.js";
 import { AudioEngine } from "./audio/engine.js";
 import { Sounds } from "./audio/sounds.js";
+import { Voice } from "./audio/voice.js";
 import { Director } from "./director.js";
 import { Kaal } from "./kaal/kaal.js";
 import { World } from "./world/world.js";
+import { Telemetry } from "./telemetry.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -47,6 +49,9 @@ const look = new Look({
   },
 });
 const game = new Game({ renderer, canvas, audio, sounds, input, look, ui });
+game.voice = new Voice(audio);
+game.log = new Telemetry();
+audio.onReady = () => game.voice.load();
 game.kaal = new Kaal(game);
 game.world = new World(game);
 const director = new Director(game);
@@ -133,6 +138,7 @@ for (const [id, key] of [
 }
 $("#set-quality").addEventListener("input", (e) => {
   settings.quality = e.target.value;
+  settings.qualityChosen = true; // never second-guess a choice
   applySettings();
   saveSettings();
 });
@@ -170,6 +176,11 @@ $("#btn-checkpoint").addEventListener("click", () => {
 });
 $("#btn-quit").addEventListener("click", () => location.reload());
 window.addEventListener("keydown", (e) => {
+  if (e.key === "F9") {
+    e.preventDefault();
+    game.log.toggle();
+    return;
+  }
   if (ui.reading) {
     ui.closePage();
     director.event("pageClosed");
@@ -211,11 +222,34 @@ function drawTitleFlame(t) {
   tctx.restore();
 }
 
+// -------------------------------------------------------- auto quality
+// A judge's laptop may struggle. Over the first seconds of play, watch the
+// frame time; if it's slow on High, drop to Low once and say so.
+const perf = { time: 0, frames: 0, done: false };
+function watchPerformance(rawDt) {
+  if (perf.done || settings.qualityChosen || settings.quality === "low" || game.state !== "play") return;
+  perf.time += rawDt;
+  perf.frames += 1;
+  if (perf.time < 1.5) return; // let shaders compile first
+  if (perf.time > 5.5) {
+    const fps = (perf.frames - 1) / (perf.time - 1.5);
+    perf.done = true;
+    if (fps < 38) {
+      settings.quality = "low";
+      saveSettings();
+      applySettings();
+      ui.note("Graphics set to Low to keep it smooth (Settings).", 4);
+    }
+  } else if (perf.time < 1.6) perf.frames = 1;
+}
+
 // ------------------------------------------------------------------- loop
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000);
+  const raw = (now - last) / 1000;
+  const dt = Math.min(0.05, raw);
   last = now;
+  watchPerformance(raw);
   if (!$("#title").classList.contains("hidden")) drawTitleFlame(now);
   if (game.state !== "paused" && game.state !== "idle") {
     // One bad frame shouldn't stop the game.
@@ -234,6 +268,7 @@ requestAnimationFrame(frame);
 
 // ?dev skips the title (for testing): ?dev&at=kitchen jumps to a room.
 const params = new URLSearchParams(location.search);
+if (params.has("log")) game.log.toggle();
 if (params.has("dev")) {
   showScreen(null);
   director.dev = Object.fromEntries(params);

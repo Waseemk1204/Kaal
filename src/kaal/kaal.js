@@ -100,7 +100,13 @@ export class Kaal {
     this.duck = s.present ? 1 - ramp(PRESENCE.duckFrom, PRESENCE.close) : 1;
     const stageLevel = [0.18, 0.4, 0.75, 0.75, 1][g.stage] ?? 0.6;
     this.tickLevel = s.present ? stageLevel : this.tickBoost ?? 0.08 * (g.stage === STAGE.RUMOUR ? 1 : 0);
+    // Creeping up on it in Dadi's room: the clocks fall silent, one by one.
+    if (s.mode === "dormant") this.tickLevel *= Math.min(1, Math.max(0, (d - 2) / 3.5));
     this.audio.setPosition(s.present ? s.x : 0, s.present ? hy : 2, s.present ? s.z : -9);
+    if (s.mode === "dormant" && d < 5.5 && !this.hushed) {
+      this.hushed = true;
+      g.sounds.e.tone({ freq: 41, type: "sine", duration: 6, gain: 0.12, attack: 2.5, out: g.sounds.e.dry });
+    }
     this.audio.update(dt, this.tickLevel * (this.silenced ? 0 : 1));
 
     // Dust: a little always, thick near it.

@@ -80,23 +80,44 @@ export class Prologue {
     this.leftovers = [];
     this.sounds();
     this.script();
+    // Seen it before? Hold Space to skip to the dark.
+    this.canSkip = (() => {
+      try {
+        return localStorage.getItem("kaal.prologueSeen") === "1";
+      } catch {
+        return false;
+      }
+    })();
+    if (this.canSkip) setTimeout(() => this.phase !== "dark" && g.ui.note("Hold Space to skip", 3), 1200);
+    this.skipHeld = 0;
+  }
+
+  skip() {
+    const g = this.g;
+    g.ui.clearSubs();
+    for (const l of this.lines) l.done = true;
+    for (const m of Object.values(g.world.family.members)) m.setState("gone");
+    this.seated = false;
+    this.phase = "fetch";
+    this.flickers = 5;
+    this.hasBox = true;
+    g.inv.ab = 8;
+    g.player.place(SPOTS.start.x, SPOTS.start.z, SPOTS.start.yaw); // at the sideboard, facing the table
+    g.player.eye = PLAYER.childEye;
+    this.blackout();
   }
 
   // ---------------------------------------------------------- dialogue
   script() {
-    const L = (at, who, text, time) => this.lines.push({ at, who, text, time });
-    L(1.5, "MUMMY", "Eat properly, Munna. Not just the rice.", 3.2);
-    L(5.2, "PAPA", "Forty paise more for petrol. Forty!", 3.2);
-    L(9.0, "DADI", "Do you know what Kaal looks like, Munna?", 3.4);
-    L(12.8, "DADI", "So tall it has to bow at every door.", 3.4);
-    L(16.8, "DADI", "It has no face. Faces are the first thing it takes.", 3.6);
-    L(20.6, "DADI", "First the face, then the name, then the person.", 3.8);
-    L(25.0, "PAPA", "Amma, don't scare the boy.", 2.6);
-    L(28.2, "DADI", "It never runs. Why would it hurry? Everyone comes to it in the end.", 4.6);
-    L(33.4, "DADI", "Only one thing stops it.", 2.6);
-    L(36.4, "DADI", "As long as the lamp burns, Kaal waits.", 4.2);
-    L(42.6, "PAPA", "There goes the power again.", 2.8);
-    L(45.8, "MUMMY", "Munna, get the matches. On the sideboard.", 3.6);
+    const L = (at, who, text, time, id) => this.lines.push({ at, who, text, time, id });
+    L(1.0, "MUMMY", "Eat properly, Munna. Not just the rice.", 2.8, "mummy-eat");
+    L(4.0, "DADI", "Do you know what Kaal looks like, Munna?", 3.0, "dadi-know");
+    L(7.2, "DADI", "So tall it bows at every door. And no face. Faces are the first thing it takes.", 4.6, "dadi-tall");
+    L(12.0, "PAPA", "Amma, don't scare the boy.", 2.4, "papa-scare");
+    L(14.6, "DADI", "It never runs. Why would it hurry? Everyone comes to it in the end.", 4.2, "dadi-runs");
+    L(19.2, "DADI", "Only one thing stops it. As long as the lamp burns, Kaal waits.", 4.6, "dadi-lamp");
+    L(24.6, "PAPA", "There goes the power again.", 2.4, "papa-power");
+    L(27.2, "MUMMY", "Munna, get the matches. On the sideboard.", 3.0, "mummy-matches");
   }
 
   // Wordless murmur under a line: a voice-shaped sound, no words.
@@ -251,6 +272,16 @@ export class Prologue {
     const t = this.t;
     const e = g.sounds.e;
 
+    // Skip (only once you've seen it).
+    if (this.canSkip && (this.phase === "dinner" || this.phase === "fetch")) {
+      this.skipHeld = g.input.down(" ") ? this.skipHeld + dt : 0;
+      g.ui.setHold(this.skipHeld / 0.8);
+      if (this.skipHeld > 0.8) {
+        g.ui.setHold(0);
+        this.skip();
+      }
+    }
+
     // Lines.
     for (const l of this.lines) {
       if (!l.done && t >= l.at) {
@@ -258,7 +289,8 @@ export class Prologue {
         g.ui.say({ who: l.who, text: l.text, time: l.time });
         this.speaking = l.who;
         this.speakEnd = t + l.time;
-        this.babble(l.who, l.time * 0.8);
+        // A recorded line if there is one; otherwise a wordless murmur.
+        if (!g.voice?.play(l.id, { muffled: false })) this.babble(l.who, l.time * 0.8);
       }
     }
     if (t > this.speakEnd) this.speaking = null;
@@ -271,14 +303,14 @@ export class Prologue {
     }
 
     // The power begins to go.
-    if (t > 40 && this.phase === "dinner") {
+    if (t > 23 && this.phase === "dinner") {
       g.world.fan = 0.35;
-      if (!this.cues.has("stutter") && t > 41) {
+      if (!this.cues.has("stutter") && t > 24) {
         this.cues.add("stutter");
         this.doFlicker(null);
       }
     }
-    if (t > 49.5 && this.phase === "dinner") {
+    if (t > 30.5 && this.phase === "dinner") {
       // Get up: go and fetch the matches.
       this.phase = "fetch";
       this.seated = false;
@@ -288,15 +320,15 @@ export class Prologue {
     }
     if (this.phase === "fetch") {
       const s = t - this.fetchAt;
-      if (s > 3 && this.flickers < 2) this.doFlicker(1);
-      if (s > 7 && this.flickers < 3) this.doFlicker(2);
-      if (s > 11 && this.flickers < 4) this.doFlicker(3);
-      if ((this.hasBox && t - this.boxAt > 1.5) || s > 30) {
+      if (s > 2.5 && this.flickers < 2) this.doFlicker(1);
+      if (s > 5 && this.flickers < 3) this.doFlicker(2);
+      if (s > 7.5 && this.flickers < 4) this.doFlicker(3);
+      if ((this.hasBox && t - this.boxAt > 1.0) || s > 25) {
         if (this.flickers < 5) this.doFlicker(4);
       }
       if (this.flickers >= 5 && this.flicker <= 0 && !this.cues.has("black")) {
         this.cues.add("black");
-        this.blackAt = t + 3;
+        this.blackAt = t + 2;
       }
       if (this.blackAt && t > this.blackAt) this.blackout();
     }
@@ -312,7 +344,7 @@ export class Prologue {
         this.change(this.pendingChange);
         this.pendingChange = null;
       }
-    } else if (this.phase === "fetch" || t > 40) {
+    } else if (this.phase === "fetch" || t > 23) {
       // An unhappy tube light, near the end.
       tube = g.reduceFlashing ? 0.72 : 0.75 + Math.sin(t * 37) * 0.08 + (Math.random() < 0.02 ? -0.5 : 0);
     }
@@ -332,6 +364,18 @@ export class Prologue {
     if (this.phase === "dark" && g.matchLit) {
       this.phase = "strike";
       this.strikeAt = t;
+      // The first match: it burns a little longer, and 1987 blooms out of it
+      // slowly, under a low swell.
+      g.match.total = g.match.left = 11;
+      const e2 = g.sounds.e;
+      for (const [f, d] of [[55, 0], [82.4, 0.3], [110, 0.6], [164.8, 0.9]]) e2.tone({ freq: f, type: "sine", duration: 7, gain: 0.05, attack: 2.5, delay: d, out: e2.dry });
+      try {
+        localStorage.setItem("kaal.prologueSeen", "1");
+      } catch {}
+    }
+    if (this.phase === "strike" && g.match) {
+      const k = Math.min(1, (t - this.strikeAt) / 2.2);
+      g.match.maxRadius = 0.4 + (2.6 - 0.4) * (k * k * (3 - 2 * k));
     }
     if (this.phase === "strike" && !g.matchLit && g.strikeT < 0) {
       this.phase = "after";
@@ -339,7 +383,7 @@ export class Prologue {
     }
     if (this.phase === "strike" || this.phase === "after") g.player.eye = Math.min(PLAYER.eye, g.player.eye + dt * 0.05); // nobody remarks on it
     if (this.phase === "after") {
-      const k = Math.min(1, (t - this.afterAt - 1.5) / 4);
+      const k = Math.min(1, (t - this.afterAt - 2.5) / 4);
       if (k > 0) {
         g.moon.hemi.intensity = this.moonWas.hemi * k;
         g.moon.moon.intensity = this.moonWas.moon * k;

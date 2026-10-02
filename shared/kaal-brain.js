@@ -164,6 +164,12 @@ export class KaalBrain {
 
     // Dormant in the corner: wakes when you come close in the dark.
     if (s.mode === "dormant") {
+      // Still facing the wall, but the head begins to turn toward you.
+      if (dist < 5) {
+        const want = Math.max(-1.4, Math.min(1.4, angleDiff(toPlayer, s.yaw)));
+        const d = angleDiff(want, s.head);
+        s.head += Math.sign(d) * Math.min(Math.abs(d), KAAL.headTurn * 0.6 * dt);
+      }
       if (dist < KAAL.dormantWake && !player.inTank) {
         s.awake = true;
         s.mode = "walk";

@@ -38,7 +38,10 @@ export class Game {
     this.hands = new Hands(this.camera);
     this.player = new Player();
     this.player.onStep = (mode) => this.sounds.step(mode, this.player.inTank);
-    this.player.onFall = () => this.sounds.fall();
+    this.player.onFall = () => {
+      this.sounds.fall();
+      this.log?.log("fall");
+    };
     this.player.onLand = () => {
       this.sounds.land();
       this.shake = 0.6;
@@ -118,6 +121,13 @@ export class Game {
 
   // ------------------------------------------------------------ matches
 
+  // Old damp matches fail sometimes; with Kaal right beside you, your hands
+  // shake and they fail more.
+  failChance() {
+    const near = this.kaal?.near ?? 0;
+    return MATCH.abFailChance + near * 0.2;
+  }
+
   tryStrike() {
     if (this.matchLit || this.strikeT >= 0 || this.noStrike) return;
     if (this.player.inTank && this.player.falling) return;
@@ -139,8 +149,9 @@ export class Game {
     const before = this.strikeT;
     this.strikeT += dt;
     if (before < 0.3 && this.strikeT >= 0.3) {
-      const fail = !this.strikeTab && !this.sureStrike && Math.random() < MATCH.abFailChance;
+      const fail = !this.strikeTab && !this.sureStrike && Math.random() < this.failChance();
       this.sureStrike = false;
+      this.log?.log(fail ? "strikeFail" : "strike", { tab: this.strikeTab });
       this.sounds.strike(!fail);
       if (fail) {
         this.strikeT = -1;
@@ -210,6 +221,7 @@ export class Game {
     flame.holder = holder;
     flame.stub = stub;
     this.placed.push(flame);
+    this.log?.log("candle");
     this.sounds.e.burst({ duration: 0.3, gain: 0.12, freq: 600, q: 0.6, type: "lowpass" });
     this.ui.showMatches(this.inv.ab, this.inv.tab, this.inv.candles);
     this.director?.event("candle", flame);
@@ -224,6 +236,7 @@ export class Game {
     const x = p.x - Math.sin(p.yaw) * 0.25;
     const z = p.z - Math.cos(p.yaw) * 0.25;
     this.dropMatch("dropped");
+    this.log?.log("dropMatch");
     const holder = new THREE.Group();
     holder.position.set(x, this.world?.surfaceAt?.(x, z) ?? 0, z);
     holder.rotation.y = Math.random() * Math.PI;
@@ -274,9 +287,12 @@ export class Game {
       }
       if (!this.match.lit) this.dropMatch("burnt");
     }
+    // In the finale, candles gutter: everything burns a little faster.
+    const gutter = this.stage >= STAGE.COMING ? 1.35 : 1;
     for (const c of this.placed) {
       if (!c.lit) continue;
-      c.update(dt, rate(c));
+      if (gutter > 1) c.lean.set(Math.sin(this.time * 7 + c.seed) * 0.4, 0.2);
+      c.update(dt, rate(c) * gutter);
       if (c.stub) {
         c.stub.scale.y = Math.max(0.15, c.fuel);
         c.object.parent.position.y = 0.095 * Math.max(0.15, c.fuel);
@@ -357,6 +373,7 @@ export class Game {
     const fwd = { x: -Math.sin(p.yaw), z: -Math.cos(p.yaw) };
     this.audio.listen(camPos.x, camPos.y, camPos.z, fwd.x, fwd.z);
     this.ui.update(dt);
+    this.log?.tick(dt, this.player.room, this.state === "play");
     this.input.endFrame();
   }
 
@@ -429,19 +446,20 @@ export class Game {
       return;
     }
     const label = typeof best.label === "function" ? best.label() : best.label;
-    this.ui.setPrompt(label, best.hold ? "Hold E" : "E");
-    if (best.hold) {
+    const hold = typeof best.hold === "function" ? best.hold() : best.hold;
+    this.ui.setPrompt(label, hold ? "Hold E" : "E");
+    if (hold) {
       if (this.input.interacting && (!best.holdCan || best.holdCan())) {
         this.holdT += dt;
         best.holding?.(this.holdT, dt);
-        if (this.holdT >= best.hold) {
+        if (this.holdT >= hold) {
           this.holdT = 0;
           this.ui.setHold(0);
           best.use();
           return;
         }
       } else this.holdT = Math.max(0, this.holdT - dt * 3);
-      this.ui.setHold(this.holdT / best.hold);
+      this.ui.setHold(this.holdT / hold);
     } else {
       this.ui.setHold(0);
       if (this.input.hit("e")) best.use();

@@ -128,3 +128,9 @@ input[type="range"] { width: 100%; max-width: 320px; accent-color: var(--ember);
 .settings-body label.check input { accent-color: var(--ember); width: 16px; height: 16px; }
 .credits { margin-top: 28px; font-size: 11px; line-height: 1.6; color: #6a6458; letter-spacing: 0.02em; }
 .credits a { color: #8d8576; }
+
+/* Playtest log (F9) */
+.playtest { position: absolute; left: 12px; top: 12px; z-index: 50; max-width: min(720px, 94vw); background: rgba(10, 8, 6, 0.88); border: 1px solid #3a342c; padding: 10px 12px; font: 12px/1.5 ui-monospace, Menlo, monospace; color: #cfc6b4; }
+.playtest-head { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+.playtest-head button { font: inherit; background: #221d17; color: #e9e2d2; border: 1px solid #4a4236; padding: 2px 8px; cursor: pointer; }
+.playtest pre { margin: 0; white-space: pre-wrap; }
